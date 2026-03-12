@@ -1,5 +1,5 @@
 from pydantic import BaseModel, model_validator, field_validator
-
+from typing import Optional
 
 class RegisterRequest(BaseModel):
     username: str
@@ -25,3 +25,8 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     username: str
     password: str
+
+
+class ChatRequest(BaseModel):
+    question: str
+    n_results: Optional[int] = 3

@@ -1,5 +1,3 @@
-# Backend/app/nlp/ingestion.py
-
 import pandas as pd
 import json
 from typing import List, Dict
