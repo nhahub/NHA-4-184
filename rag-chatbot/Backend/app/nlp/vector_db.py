@@ -5,7 +5,7 @@ from typing import List, Dict
 class VectorDB:
     """Handles ChromaDB operations for storing and searching chunks."""
 
-    def __init__(self, db_path: str = "data/vector_db", collection_name: str = "qa_chunks"):
+    def __init__(self, db_path: str = "../data/vector_db", collection_name: str = "qa_chunks"):
         self.client = chromadb.PersistentClient(path=db_path)
         self.collection = self.client.get_or_create_collection(name=collection_name)
 
