@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
+from datetime import datetime
 
 
 class UserResponse(BaseModel):
@@ -30,3 +31,36 @@ class ChatResponse(BaseModel):
     matched_question: str
     category: str
     sources: List[SourceChunk]
+    conversation_id: int
+
+
+class MessageItem(BaseModel):
+    id: int
+    user_query: str
+    llm_response: str
+    response_time: Optional[float]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ConversationListItem(BaseModel):
+    id: int
+    title: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ConversationDetail(BaseModel):
+    id: int
+    title: str
+    created_at: datetime
+    updated_at: datetime
+    messages: List[MessageItem]
+
+    class Config:
+        from_attributes = True

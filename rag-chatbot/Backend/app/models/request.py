@@ -29,4 +29,5 @@ class LoginRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     question: str
+    conversation_id: Optional[int] = None
     n_results: Optional[int] = 3
