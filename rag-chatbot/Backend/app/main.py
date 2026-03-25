@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.db.session import engine
 from app.db.models import Base
-from app.api import auth, chat
+from app.api import auth, chat, feedback
 
 # Create tables on startup
 Base.metadata.create_all(bind=engine)
@@ -24,6 +24,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(chat.router)
+app.include_router(feedback.router)
 
 @app.get("/", tags=["Health"])
 def root():

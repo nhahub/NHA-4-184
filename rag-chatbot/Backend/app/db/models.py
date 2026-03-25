@@ -38,12 +38,16 @@ class ChatMessage(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     conversation = relationship("Conversation", back_populates="messages")
+    feedback = relationship("Feedback", back_populates="message", uselist=False)
 
 
 class Feedback(Base):
     __tablename__ = "feedback"
     id = Column(Integer, primary_key=True, index=True)
-    chat_message_id = Column(Integer, ForeignKey("chat_messages.id"), nullable=False)
-    rating = Column(Integer, nullable=False)
+    chat_message_id = Column(Integer, ForeignKey("chat_messages.id"), nullable=False, unique=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    rating = Column(Integer, nullable=False)  # 1 = thumbs up, -1 = thumbs down
     comment = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    message = relationship("ChatMessage", back_populates="feedback")

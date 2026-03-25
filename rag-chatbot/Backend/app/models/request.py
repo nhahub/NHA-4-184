@@ -31,3 +31,15 @@ class ChatRequest(BaseModel):
     question: str
     conversation_id: Optional[int] = None
     n_results: Optional[int] = 3
+
+class FeedbackRequest(BaseModel):
+    message_id: int
+    rating: int  # 1 = thumbs up, -1 = thumbs down
+    comment: Optional[str] = None
+
+    @field_validator("rating")
+    @classmethod
+    def rating_must_be_valid(cls, v):
+        if v not in (1, -1):
+            raise ValueError("Rating must be 1 (thumbs up) or -1 (thumbs down)")
+        return v
