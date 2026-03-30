@@ -6,6 +6,7 @@ from datetime import datetime
 class UserResponse(BaseModel):
     id: int
     username: str
+    email: str
     is_active: bool
 
     class Config:
@@ -54,6 +55,16 @@ class FeedbackResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class OTPResponse(BaseModel):
+    message: str
+    expires_in_minutes: int = 5
+
+
+class ResetTokenResponse(BaseModel):
+    reset_token: str
+    user: UserResponse
 
 
 # --- Chat History Models ---

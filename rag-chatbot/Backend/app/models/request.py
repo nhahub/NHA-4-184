@@ -1,8 +1,9 @@
-from pydantic import BaseModel, model_validator, field_validator
+from pydantic import BaseModel, model_validator, field_validator, EmailStr
 from typing import Optional
 
 class RegisterRequest(BaseModel):
     username: str
+    email: EmailStr
     password: str
     confirm_password: str
 
@@ -43,3 +44,40 @@ class FeedbackRequest(BaseModel):
         if v not in (1, -1):
             raise ValueError("Rating must be 1 (thumbs up) or -1 (thumbs down)")
         return v
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class VerifyOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str
+
+    @field_validator("otp")
+    @classmethod
+    def otp_must_be_6_digits(cls, v):
+        if not v.isdigit() or len(v) != 6:
+            raise ValueError("OTP must be exactly 6 digits")
+        return v
+
+
+class ResetPasswordRequest(BaseModel):
+    reset_token: str
+    new_password: str
+    confirm_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def password_length(cls, v):
+        if len(v) < 6:
+            raise ValueError("Password must be at least 6 characters")
+        if len(v) > 72:
+            raise ValueError("Password must be at most 72 characters")
+        return v
+
+    @model_validator(mode="after")
+    def passwords_must_match(self):
+        if self.new_password != self.confirm_password:
+            raise ValueError("Passwords do not match")
+        return self
