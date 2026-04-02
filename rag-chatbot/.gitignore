@@ -1,2 +1,4 @@
 data/vector_db/
 .env
+__pycache__/
+.ipynb_checkpoints/
