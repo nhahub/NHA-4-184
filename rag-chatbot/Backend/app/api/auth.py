@@ -1,3 +1,8 @@
+import os
+import secrets
+from authlib.integrations.starlette_client import OAuth
+from starlette.requests import Request
+from starlette.responses import RedirectResponse
 import random
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -12,6 +17,17 @@ from app.models.request import (
 from app.models.response import TokenResponse, UserResponse, OTPResponse, ResetTokenResponse
 from app.core.security import hash_password, verify_password, create_access_token
 from app.utils.email import send_otp_email
+
+
+oauth = OAuth()
+oauth.register(
+    name="google",
+    client_id=os.getenv("GOOGLE_CLIENT_ID"),
+    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+    client_kwargs={"scope": "openid email profile"},
+)
+
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -137,3 +153,67 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db))
     db.commit()
 
     return {"message": "Password reset successfully"}
+
+# ==================== GOOGLE OAUTH ====================
+
+@router.get("/google/login")
+async def google_login(request: Request):
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback")
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+
+@router.get("/google/callback")
+async def google_callback(request: Request, db: Session = Depends(get_db)):
+    try:
+        token = await oauth.google.authorize_access_token(request)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Google authentication failed")
+
+    user_info = token.get("userinfo")
+    if not user_info:
+        raise HTTPException(status_code=400, detail="Could not get user info from Google")
+
+    email = user_info.get("email")
+    google_id = user_info.get("sub")
+    name = user_info.get("name", "")
+    picture = user_info.get("picture", "")
+
+    # Check if user already exists (by Google ID or email)
+    user = db.query(User).filter(
+        (User.google_id == google_id) | (User.email == email)
+    ).first()
+
+    if user:
+        # Update Google info if needed
+        if not user.google_id:
+            user.google_id = google_id
+            user.profile_picture = picture
+            db.commit()
+    else:
+        # Create new user
+        username = email.split("@")[0] + "_" + secrets.token_hex(3)
+        user = User(
+            username=username,
+            email=email,
+            google_id=google_id,
+            profile_picture=picture,
+            hashed_password=None
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    # Generate JWT token
+    access_token = create_access_token(data={"sub": str(user.id)})
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "profile_picture": user.profile_picture
+        }
+    }
+

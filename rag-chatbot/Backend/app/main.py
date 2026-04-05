@@ -1,6 +1,7 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from starlette.middleware.sessions import SessionMiddleware
 from app.db.session import engine
 from app.db.models import Base
 from app.api import auth, chat, feedback
@@ -13,6 +14,8 @@ app = FastAPI(
     description="AI-powered support using Retrieval-Augmented Generation",
     version="1.0.0"
 )
+
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY", "your-secret-key"))
 
 app.add_middleware(
     CORSMiddleware,
