@@ -14,6 +14,7 @@ from app.models.response import (
 from app.core.security import get_current_user
 from app.nlp.retrieval import Retriever
 from app.nlp.generator import Generator
+from app.mlops.tracker import tracker
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
@@ -85,6 +86,19 @@ def ask_question(
             distance=r["distance"],
             category=r["metadata"].get("issue_area", "")
         ))
+
+    # --- NEW: Log to MLflow ---
+    tracker.log_chat_query(
+        question=body.question,
+        answer=answer,
+        confidence=result["confidence"],
+        response_time=elapsed,
+        n_results=body.n_results,
+        sources_count=len(sources),
+        category=result["category"],
+        user_id=current_user.id,
+        conversation_id=conversation.id
+    )
 
     return ChatResponse(
         answer=answer,
