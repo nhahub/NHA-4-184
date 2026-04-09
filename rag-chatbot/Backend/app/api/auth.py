@@ -1,5 +1,7 @@
 import os
 import secrets
+import time
+import logging
 from authlib.integrations.starlette_client import OAuth
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
@@ -20,6 +22,8 @@ from app.core.security import hash_password, verify_password, create_access_toke
 from app.utils.email import send_otp_email
 
 
+logger = logging.getLogger(__name__)
+
 oauth = OAuth()
 oauth.register(
     name="google",
@@ -38,10 +42,12 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 def register(request: Request,body: RegisterRequest, db: Session = Depends(get_db)):
     # Check username not taken
     if db.query(User).filter(User.username == body.username).first():
+        logger.warning(f"Registration failed: username already taken, username={body.username}")
         raise HTTPException(status_code=400, detail="Username already taken")
 
     # Check email not taken
     if db.query(User).filter(User.email == body.email).first():
+        logger.warning(f"Registration failed: email already exists, email={body.email}")
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user = User(
@@ -52,6 +58,7 @@ def register(request: Request,body: RegisterRequest, db: Session = Depends(get_d
     db.add(user)
     db.commit()
     db.refresh(user)
+    logger.info(f"User registered: user_id={user.id}, username={user.username}, email={user.email}")
     return user
 
 
@@ -61,12 +68,14 @@ def login(request: Request,body: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == body.username).first()
 
     if not user or not verify_password(body.password, user.hashed_password):
+        logger.warning(f"Login failed: invalid credentials for username={body.username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password"
         )
 
     token = create_access_token(data={"sub": str(user.id)})
+    logger.info(f"User login successful: user_id={user.id}, username={user.username}")
     return TokenResponse(
         access_token=token,
         user=UserResponse.model_validate(user)
@@ -78,6 +87,7 @@ def login(request: Request,body: LoginRequest, db: Session = Depends(get_db)):
 @router.post("/forgot-password", response_model=OTPResponse)
 @limiter.limit("3/minute")
 def forgot_password(request: Request,body: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    start_time = time.time()
     user = db.query(User).filter(User.email == body.email).first()
     if not user:
         raise HTTPException(status_code=404, detail="Email not found")
@@ -99,6 +109,8 @@ def forgot_password(request: Request,body: ForgotPasswordRequest, db: Session = 
 
     # Send OTP email
     send_otp_email(to_email=user.email, otp_code=otp_code)
+    duration_ms = round((time.time() - start_time) * 1000, 2)
+    logger.info(f"Password reset requested: user_id={user.id}, email={user.email}, otp_sent=true, duration_ms={duration_ms}")
 
     return OTPResponse(message="OTP sent to your email")
 
@@ -108,6 +120,7 @@ def forgot_password(request: Request,body: ForgotPasswordRequest, db: Session = 
 def verify_otp(request: Request,body: VerifyOTPRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email).first()
     if not user:
+        logger.warning(f"OTP verification failed: email not found, email={body.email}")
         raise HTTPException(status_code=404, detail="Email not found")
 
     # Find valid OTP
@@ -118,9 +131,11 @@ def verify_otp(request: Request,body: VerifyOTPRequest, db: Session = Depends(ge
     ).first()
 
     if not otp:
+        logger.warning(f"OTP verification failed: invalid otp for user_id={user.id}")
         raise HTTPException(status_code=400, detail="Invalid OTP")
 
     if otp.expires_at < datetime.now(timezone.utc):
+        logger.warning(f"OTP verification failed: otp expired for user_id={user.id}")
         raise HTTPException(status_code=400, detail="OTP has expired")
 
     # Mark OTP as used
@@ -130,6 +145,8 @@ def verify_otp(request: Request,body: VerifyOTPRequest, db: Session = Depends(ge
     # Generate reset token (short-lived, 10 minutes)
     reset_token = create_access_token(data={"sub": str(user.id), "purpose": "reset"})
     
+    logger.info(f"OTP verification successful: user_id={user.id}")
+
     return ResetTokenResponse(
         reset_token=reset_token,
         user=UserResponse.model_validate(user)
@@ -144,18 +161,22 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db))
     try:
         payload = jwt.decode(request.reset_token, SECRET_KEY, algorithms=[ALGORITHM])
         if payload.get("purpose") != "reset":
+            logger.warning(f"Password reset failed: invalid purpose in token")
             raise HTTPException(status_code=400, detail="Invalid reset token")
         user_id = int(payload.get("sub"))
     except (jwt.ExpiredSignatureError, jwt.DecodeError, ValueError):
+        logger.warning(f"Password reset failed: invalid or expired reset token")
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
 
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
+        logger.warning(f"Password reset failed: user not found for user_id={user_id}")
         raise HTTPException(status_code=404, detail="User not found")
 
     # Update password
     user.hashed_password = hash_password(request.new_password)
     db.commit()
+    logger.info(f"Password reset completed: user_id={user.id}")
 
     return {"message": "Password reset successfully"}
 
@@ -163,6 +184,7 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db))
 
 @router.get("/google/login")
 async def google_login(request: Request):
+    logger.info("Google OAuth login initiated")
     redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback")
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
@@ -171,7 +193,8 @@ async def google_login(request: Request):
 async def google_callback(request: Request, db: Session = Depends(get_db)):
     try:
         token = await oauth.google.authorize_access_token(request)
-    except Exception:
+    except Exception as e:
+        logger.error(f"Google OAuth callback failed: {str(e)}", exc_info=True)
         raise HTTPException(status_code=400, detail="Google authentication failed")
 
     user_info = token.get("userinfo")
@@ -194,6 +217,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             user.google_id = google_id
             user.profile_picture = picture
             db.commit()
+        logger.info(f"Google OAuth: existing user logged in, user_id={user.id}")
     else:
         # Create new user
         username = email.split("@")[0] + "_" + secrets.token_hex(3)
@@ -207,6 +231,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         db.add(user)
         db.commit()
         db.refresh(user)
+        logger.info(f"Google OAuth: new user registered, user_id={user.id}, username={user.username}")
 
     # Generate JWT token
     access_token = create_access_token(data={"sub": str(user.id)})

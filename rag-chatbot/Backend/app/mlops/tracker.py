@@ -36,8 +36,10 @@ class RAGExperimentTracker:
         - Parameters: what settings were used (model, temperature, etc.)
         - Metrics: how well it performed (confidence, speed, etc.)
         """
+        logger.debug(f"MLflow logging started: user_id={user_id}, question_len={len(question)}, confidence={confidence}")
         try:
-            with mlflow.start_run(run_name=f"query_{conversation_id}_{int(time.time())}"):
+            with mlflow.start_run(run_name=f"query_{conversation_id}_{int(time.time())}") as run:
+                run_id = run.info.run_id
                 # --- Parameters (the CONFIG used) ---
                 mlflow.log_param("question", question[:250])
                 mlflow.log_param("n_results", n_results)
@@ -55,10 +57,11 @@ class RAGExperimentTracker:
                 mlflow.log_metric("sources_count", sources_count)
                 mlflow.log_metric("answer_length", len(answer))
                 mlflow.log_metric("question_length", len(question))
+                
+                logger.info(f"MLflow query run logged: run_id={run_id}, user_id={user_id}, confidence={confidence}")
 
         except Exception as e:
-            # Don't crash the app if MLflow fails
-            logger.error(f"MLflow logging failed: {e}")
+            logger.error(f"MLflow logging failed: {str(e)}, user_id={user_id}, conversation_id={conversation_id}", exc_info=True)
 
     def log_feedback(self, message_id: int, rating: int):
         """
@@ -67,14 +70,17 @@ class RAGExperimentTracker:
         This helps track user satisfaction over time.
         rating: 1 = thumbs up, -1 = thumbs down
         """
+        logger.debug(f"MLflow feedback logging started: message_id={message_id}, rating={rating}")
         try:
-            with mlflow.start_run(run_name=f"feedback_{message_id}_{int(time.time())}"):
+            with mlflow.start_run(run_name=f"feedback_{message_id}_{int(time.time())}") as run:
+                run_id = run.info.run_id
                 mlflow.log_param("message_id", message_id)
                 mlflow.log_param("feedback_type", "positive" if rating == 1 else "negative")
                 mlflow.log_metric("rating", rating)
+                logger.info(f"MLflow feedback run logged: run_id={run_id}, message_id={message_id}, rating={rating}")
 
         except Exception as e:
-            logger.error(f"MLflow feedback logging failed: {e}")
+            logger.error(f"MLflow feedback logging failed: {str(e)}, message_id={message_id}", exc_info=True)
 
 
 # --- Create a single global instance ---

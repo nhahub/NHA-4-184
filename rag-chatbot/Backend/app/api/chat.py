@@ -1,6 +1,9 @@
 import time
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 from starlette.requests import Request
 from app.core.rate_limiter import limiter
@@ -30,10 +33,15 @@ def ask_question(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+
+    logger.info(f"Chat query started: user_id={current_user.id}, conversation_id={body.conversation_id}, question_len={len(body.question)}")
+
     if not body.question.strip():
+        logger.warning(f"Chat query failed: empty question, user_id={current_user.id}")
         raise HTTPException(status_code=400, detail="Question cannot be empty")
 
     start_time = time.time()
+    retrieval_start = time.time()
 
     # Retrieve context
     result = retriever.get_answer_with_context(
@@ -41,11 +49,25 @@ def ask_question(
         n_results=body.n_results
     )
 
+    retrieval_time = round((time.time() - retrieval_start) * 1000, 2)
+    logger.info(f"Retrieval completed: chunks_found={len(result['all_results'])}, confidence={result['confidence']}, duration_ms={retrieval_time}")
+
+    gen_start = time.time()
     # Generate answer using LLM
-    answer = generator.generate_answer(
-        question=body.question,
-        retrieved_chunks=result["all_results"]
-    )
+    try:
+        answer = generator.generate_answer(
+            question=body.question,
+            retrieved_chunks=result["all_results"]
+        )
+    except Exception as e:
+        logger.error(f"LLM generation failed: {str(e)}", extra={
+            "user_id":current_user.id,
+            "question_len": len(body.question)
+        }, exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate answer")
+
+    gen_time = round((time.time() - gen_start) * 1000, 2)
+    logger.info(f"LLM generation completed: answer_len={len(answer)}, duration_ms={gen_time}")
 
     elapsed = round(time.time() - start_time, 3)
 
@@ -56,16 +78,23 @@ def ask_question(
             Conversation.user_id == current_user.id
         ).first()
         if not conversation:
+            logger.warning(f"Chat query failed: conversation not found, conversation_id={body.conversation_id}, user_id={current_user.id}")
             raise HTTPException(status_code=404, detail="Conversation not found")
     else:
         # Create new conversation with first question as title
         title = body.question[:100]
         conversation = Conversation(user_id=current_user.id, title=title)
         db.add(conversation)
-        db.commit()
-        db.refresh(conversation)
+        try:
+            db.commit()
+            db.refresh(conversation)
+            logger.info(f"New conversation created: conversation_id={conversation.id}, user_id={current_user.id}")
+        except Exception as e:
+            logger.error(f"Failed to create conversation: {str(e)}", exc_info=True)
+            raise HTTPException(status_code=500, detail="Failed to create conversation")
 
     # Save message to DB
+    db_start = time.time()
     context_text = "\n---\n".join([r["text"] for r in result["all_results"]])
     message = ChatMessage(
         conversation_id=conversation.id,
@@ -76,6 +105,9 @@ def ask_question(
     )
     db.add(message)
     db.commit()
+
+    db_time = round((time.time() - db_start) * 1000, 2)
+    logger.info(f"Chat message saved: conversation_id={conversation.id}, duration_ms={db_time}")
 
     # Build sources
     sources = []
@@ -100,6 +132,8 @@ def ask_question(
         conversation_id=conversation.id
     )
 
+    logger.info(f"Chat query completed: user_id={current_user.id}, conversation_id={conversation.id}, total_duration_ms={elapsed}")
+
     return ChatResponse(
         answer=answer,
         confidence=result["confidence"],
@@ -120,6 +154,8 @@ def get_all_conversations(
         Conversation.user_id == current_user.id
     ).order_by(Conversation.updated_at.desc()).all()
 
+    logger.info(f"Retrieved conversation history: user_id={current_user.id}, count={len(conversations)}")
+
     return conversations
 
 
@@ -136,6 +172,9 @@ def get_conversation(
     ).first()
 
     if not conversation:
+        logger.warning(f"Conversation not found: conversation_id={conversation_id}, user_id={current_user.id}")
         raise HTTPException(status_code=404, detail="Conversation not found")
+
+    logger.info(f"Retrieved conversation: conversation_id={conversation_id}, user_id={current_user.id}, message_count={len(conversation.messages)}")
 
     return conversation

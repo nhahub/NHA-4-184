@@ -5,6 +5,8 @@ from app.core.rate_limiter import limiter
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
+from app.middleware.logging import LoggingMiddleware
+from app.core.logging_config import setup_logging
 from app.db.session import engine
 from app.db.models import Base
 from app.api import auth, chat, feedback
@@ -17,6 +19,11 @@ app = FastAPI(
     description="AI-powered support using Retrieval-Augmented Generation",
     version="1.0.0"
 )
+
+environment = os.getenv("ENVIRONMENT", "development")
+setup_logging(environment)
+
+app.add_middleware(LoggingMiddleware)
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
