@@ -10,6 +10,8 @@ from app.core.logging_config import setup_logging
 from app.db.session import engine
 from app.db.models import Base
 from app.api import auth, chat, feedback
+from fastapi.responses import Response
+from app.mlops.metrics import get_metrics, get_metrics_content_type
 
 # Create tables on startup
 Base.metadata.create_all(bind=engine)
@@ -45,3 +47,11 @@ app.include_router(feedback.router)
 @app.get("/", tags=["Health"])
 def root():
     return {"status": "ok", "message": "RAG Chatbot API is running 🚀"}
+
+@app.get("/metrics", tags=["Monitoring"])
+def metrics():
+    """Prometheus metrics endpoint — exposes all app metrics."""
+    return Response(
+        content=get_metrics(),
+        media_type=get_metrics_content_type()
+    )

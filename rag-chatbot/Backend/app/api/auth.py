@@ -20,6 +20,7 @@ from app.models.request import (
 from app.models.response import TokenResponse, UserResponse, OTPResponse, ResetTokenResponse
 from app.core.security import hash_password, verify_password, create_access_token
 from app.utils.email import send_otp_email
+from app.mlops.metrics import auth_login_total, auth_register_total
 
 
 logger = logging.getLogger(__name__)
@@ -43,11 +44,13 @@ def register(request: Request,body: RegisterRequest, db: Session = Depends(get_d
     # Check username not taken
     if db.query(User).filter(User.username == body.username).first():
         logger.warning(f"Registration failed: username already taken, username={body.username}")
+        auth_register_total.labels(status="failed").inc()
         raise HTTPException(status_code=400, detail="Username already taken")
 
     # Check email not taken
     if db.query(User).filter(User.email == body.email).first():
         logger.warning(f"Registration failed: email already exists, email={body.email}")
+        auth_register_total.labels(status="failed").inc()
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user = User(
@@ -59,6 +62,7 @@ def register(request: Request,body: RegisterRequest, db: Session = Depends(get_d
     db.commit()
     db.refresh(user)
     logger.info(f"User registered: user_id={user.id}, username={user.username}, email={user.email}")
+    auth_register_total.labels(status="success").inc()
     return user
 
 
@@ -69,6 +73,7 @@ def login(request: Request,body: LoginRequest, db: Session = Depends(get_db)):
 
     if not user or not verify_password(body.password, user.hashed_password):
         logger.warning(f"Login failed: invalid credentials for username={body.username}")
+        auth_login_total.labels(status="failed").inc()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password"
@@ -76,6 +81,7 @@ def login(request: Request,body: LoginRequest, db: Session = Depends(get_db)):
 
     token = create_access_token(data={"sub": str(user.id)})
     logger.info(f"User login successful: user_id={user.id}, username={user.username}")
+    auth_login_total.labels(status="success").inc()
     return TokenResponse(
         access_token=token,
         user=UserResponse.model_validate(user)

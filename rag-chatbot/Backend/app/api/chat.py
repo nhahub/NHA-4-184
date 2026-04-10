@@ -18,6 +18,9 @@ from app.core.security import get_current_user
 from app.nlp.retrieval import Retriever
 from app.nlp.generator import Generator
 from app.mlops.tracker import tracker
+from app.mlops.metrics import (
+    chat_requests_total, chat_response_seconds, retrieval_confidence
+)
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
@@ -38,6 +41,7 @@ def ask_question(
 
     if not body.question.strip():
         logger.warning(f"Chat query failed: empty question, user_id={current_user.id}")
+        chat_requests_total.labels(status="error").inc()
         raise HTTPException(status_code=400, detail="Question cannot be empty")
 
     start_time = time.time()
@@ -64,6 +68,7 @@ def ask_question(
             "user_id":current_user.id,
             "question_len": len(body.question)
         }, exc_info=True)
+        chat_requests_total.labels(status="error").inc()
         raise HTTPException(status_code=500, detail="Failed to generate answer")
 
     gen_time = round((time.time() - gen_start) * 1000, 2)
@@ -119,7 +124,7 @@ def ask_question(
             category=r["metadata"].get("issue_area", "")
         ))
 
-    # --- NEW: Log to MLflow ---
+    # --- Log to MLflow ---
     tracker.log_chat_query(
         question=body.question,
         answer=answer,
@@ -131,6 +136,11 @@ def ask_question(
         user_id=current_user.id,
         conversation_id=conversation.id
     )
+
+    # --- Record Prometheus metrics ---
+    chat_requests_total.labels(status="success").inc()
+    chat_response_seconds.observe(elapsed)
+    retrieval_confidence.observe(result["confidence"])
 
     logger.info(f"Chat query completed: user_id={current_user.id}, conversation_id={conversation.id}, total_duration_ms={elapsed}")
 

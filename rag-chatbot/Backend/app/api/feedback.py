@@ -8,6 +8,7 @@ from app.models.request import FeedbackRequest
 from app.models.response import FeedbackResponse
 from app.core.security import get_current_user
 from app.mlops.tracker import tracker
+from app.mlops.metrics import feedback_positive_total, feedback_negative_total
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,11 @@ def submit_feedback(
             db.refresh(existing)
             logger.info(f"Feedback updated: message_id={request.message_id}, user_id={current_user.id}, rating={request.rating}")
             tracker.log_feedback(message_id=request.message_id, rating=request.rating)
+            # --- Record Prometheus metric ---
+            if request.rating == 1:
+                feedback_positive_total.inc()
+            else:
+                feedback_negative_total.inc()
         except Exception as e:
             logger.error(f"Failed to update feedback: {str(e)}", exc_info=True)
             raise HTTPException(status_code=500, detail="Failed to save feedback")
@@ -65,6 +71,11 @@ def submit_feedback(
             db.refresh(feedback)
             logger.info(f"Feedback submitted: message_id={request.message_id}, user_id={current_user.id}, rating={request.rating}")
             tracker.log_feedback(message_id=request.message_id, rating=request.rating)
+            # --- Record Prometheus metric ---
+            if request.rating == 1:
+                feedback_positive_total.inc()
+            else:
+                feedback_negative_total.inc()
         except Exception as e:
             logger.error(f"Failed to create feedback: {str(e)}", exc_info=True)
             raise HTTPException(status_code=500, detail="Failed to save feedback")
