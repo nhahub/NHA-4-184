@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.rate_limiter import limiter
+from app.core.security import get_current_user
 from app.db.session import get_db
 from app.db.models import User, OTPCode
 from app.models.request import (
@@ -251,5 +252,15 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             "email": user.email,
             "profile_picture": user.profile_picture
         }
+    }
+
+@router.get("/me")
+def get_current_user_info(current_user: User = Depends(get_current_user)):
+    logger.info(f"User info retrieved: user_id={current_user.id}")
+    return {
+        "id": current_user.id,
+        "username": current_user.username,
+        "email": current_user.email,
+        "profile_picture": current_user.profile_picture
     }
 
