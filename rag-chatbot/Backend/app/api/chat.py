@@ -47,38 +47,8 @@ def ask_question(
         raise HTTPException(status_code=400, detail="Question cannot be empty")
 
     start_time = time.time()
-    retrieval_start = time.time()
 
-    # Retrieve context
-    result = retriever.get_answer_with_context(
-        question=body.question,
-        n_results=body.n_results
-    )
-
-    retrieval_time = round((time.time() - retrieval_start) * 1000, 2)
-    logger.info(f"Retrieval completed: chunks_found={len(result['all_results'])}, confidence={result['confidence']}, duration_ms={retrieval_time}")
-
-    gen_start = time.time()
-    # Generate answer using LLM
-    try:
-        answer = generator.generate_answer(
-            question=body.question,
-            retrieved_chunks=result["all_results"]
-        )
-    except Exception as e:
-        logger.error(f"LLM generation failed: {str(e)}", extra={
-            "user_id":current_user.id,
-            "question_len": len(body.question)
-        }, exc_info=True)
-        chat_requests_total.labels(status="error").inc()
-        raise HTTPException(status_code=500, detail="Failed to generate answer")
-
-    gen_time = round((time.time() - gen_start) * 1000, 2)
-    logger.info(f"LLM generation completed: answer_len={len(answer)}, duration_ms={gen_time}")
-
-    elapsed = round(time.time() - start_time, 3)
-
-    # If conversation_id provided, use existing conversation; otherwise create new one
+    # Step 1: Load or create conversation
     if body.conversation_id:
         conversation = db.query(Conversation).filter(
             Conversation.id == body.conversation_id,
@@ -88,7 +58,6 @@ def ask_question(
             logger.warning(f"Chat query failed: conversation not found, conversation_id={body.conversation_id}, user_id={current_user.id}")
             raise HTTPException(status_code=404, detail="Conversation not found")
     else:
-        # Create new conversation with first question as title
         title = body.question[:100]
         conversation = Conversation(user_id=current_user.id, title=title)
         db.add(conversation)
@@ -100,7 +69,57 @@ def ask_question(
             logger.error(f"Failed to create conversation: {str(e)}", exc_info=True)
             raise HTTPException(status_code=500, detail="Failed to create conversation")
 
-    # Save message to DB
+    # Step 2: Load conversation history (last 6 messages for context)
+    conversation_history = []
+    if body.conversation_id and conversation:
+        previous_messages = db.query(ChatMessage).filter(
+            ChatMessage.conversation_id == conversation.id
+        ).order_by(ChatMessage.created_at.desc()).limit(6).all()
+
+        previous_messages.reverse()
+
+        for msg in previous_messages:
+            conversation_history.append({"role": "user", "content": msg.user_query})
+            conversation_history.append({"role": "assistant", "content": msg.llm_response})
+
+        logger.info(f"Loaded conversation history: messages={len(previous_messages)}, conversation_id={conversation.id}")
+
+    # Step 2.5: Rewrite vague follow-up questions for better retrieval
+    search_query = body.question
+    if conversation_history:
+        search_query = generator.rewrite_query(body.question, conversation_history)
+
+    # Step 3: Retrieve context from ChromaDB
+    retrieval_start = time.time()
+    result = retriever.get_answer_with_context(
+        question=search_query,
+        n_results=body.n_results
+    )
+    retrieval_time = round((time.time() - retrieval_start) * 1000, 2)
+    logger.info(f"Retrieval completed: chunks_found={len(result['all_results'])}, confidence={result['confidence']}, duration_ms={retrieval_time}")
+
+    # Step 4: Generate answer using LLM (with conversation history)
+    gen_start = time.time()
+    try:
+        answer = generator.generate_answer(
+            question=body.question,
+            retrieved_chunks=result["all_results"],
+            conversation_history=conversation_history
+        )
+    except Exception as e:
+        logger.error(f"LLM generation failed: {str(e)}", extra={
+            "user_id": current_user.id,
+            "question_len": len(body.question)
+        }, exc_info=True)
+        chat_requests_total.labels(status="error").inc()
+        raise HTTPException(status_code=500, detail="Failed to generate answer")
+
+    gen_time = round((time.time() - gen_start) * 1000, 2)
+    logger.info(f"LLM generation completed: answer_len={len(answer)}, duration_ms={gen_time}")
+
+    elapsed = round(time.time() - start_time, 3)
+
+    # Step 5: Save message to DB
     db_start = time.time()
     context_text = "\n---\n".join([r["text"] for r in result["all_results"]])
     message = ChatMessage(
@@ -185,20 +204,9 @@ async def voice_query(
 
     logger.info(f"Voice transcribed: text='{question[:100]}', user_id={current_user.id}")
 
-    # From here, same logic as /chat/ask
     start_time = time.time()
 
-    result = retriever.get_answer_with_context(question=question, n_results=n_results)
-
-    try:
-        answer = generator.generate_answer(question=question, retrieved_chunks=result["all_results"])
-    except Exception as e:
-        logger.error(f"LLM generation failed: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to generate answer")
-
-    elapsed = round(time.time() - start_time, 3)
-
-    # Handle conversation
+    # Step 1: Load or create conversation
     conv_id = conversation_id if conversation_id != 0 else None
     if conv_id:
         conversation = db.query(Conversation).filter(
@@ -213,7 +221,43 @@ async def voice_query(
         db.commit()
         db.refresh(conversation)
 
-    # Save message
+    # Step 2: Load conversation history (last 6 messages)
+    conversation_history = []
+    if conv_id and conversation:
+        previous_messages = db.query(ChatMessage).filter(
+            ChatMessage.conversation_id == conversation.id
+        ).order_by(ChatMessage.created_at.desc()).limit(6).all()
+
+        previous_messages.reverse()
+
+        for msg in previous_messages:
+            conversation_history.append({"role": "user", "content": msg.user_query})
+            conversation_history.append({"role": "assistant", "content": msg.llm_response})
+
+        logger.info(f"Loaded conversation history: messages={len(previous_messages)}, conversation_id={conversation.id}")
+
+    # Step 2.5: Rewrite vague follow-up questions for better retrieval
+    search_query = question
+    if conversation_history:
+        search_query = generator.rewrite_query(question, conversation_history)
+
+    # Step 3: Retrieve context
+    result = retriever.get_answer_with_context(question=search_query, n_results=n_results)
+
+    # Step 4: Generate answer with history
+    try:
+        answer = generator.generate_answer(
+            question=question,
+            retrieved_chunks=result["all_results"],
+            conversation_history=conversation_history
+        )
+    except Exception as e:
+        logger.error(f"LLM generation failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate answer")
+
+    elapsed = round(time.time() - start_time, 3)
+
+    # Step 5: Save message
     context_text = "\n---\n".join([r["text"] for r in result["all_results"]])
     message = ChatMessage(
         conversation_id=conversation.id,
