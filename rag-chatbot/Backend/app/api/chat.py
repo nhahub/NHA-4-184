@@ -1,6 +1,6 @@
 import time
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -17,6 +17,7 @@ from app.models.response import (
 from app.core.security import get_current_user
 from app.nlp.retrieval import Retriever
 from app.nlp.generator import Generator
+from app.nlp.transcriber import Transcriber
 from app.mlops.tracker import tracker
 from app.mlops.metrics import (
     chat_requests_total, chat_response_seconds, retrieval_confidence
@@ -26,6 +27,7 @@ router = APIRouter(prefix="/chat", tags=["Chat"])
 
 retriever = Retriever()
 generator = Generator()
+transcriber = Transcriber()
 
 
 @router.post("/ask", response_model=ChatResponse)
@@ -152,6 +154,111 @@ def ask_question(
         sources=sources,
         conversation_id=conversation.id
     )
+
+@router.post("/voice")
+@limiter.limit("5/minute")
+async def voice_query(
+    request: Request,
+    audio: UploadFile = File(...),
+    conversation_id: int = Form(0),
+    n_results: int = Form(3),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    logger.info(f"Voice query started: user_id={current_user.id}, filename={audio.filename}, content_type={audio.content_type}")
+
+    # Read audio file
+    audio_bytes = await audio.read()
+    if len(audio_bytes) == 0:
+        raise HTTPException(status_code=400, detail="Empty audio file")
+
+    # Transcribe with Whisper
+    try:
+        transcription = transcriber.transcribe(audio_bytes, filename=audio.filename)
+    except Exception as e:
+        logger.error(f"Voice transcription failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to transcribe audio")
+
+    question = transcription["text"]
+    if not question.strip():
+        raise HTTPException(status_code=400, detail="Could not understand audio")
+
+    logger.info(f"Voice transcribed: text='{question[:100]}', user_id={current_user.id}")
+
+    # From here, same logic as /chat/ask
+    start_time = time.time()
+
+    result = retriever.get_answer_with_context(question=question, n_results=n_results)
+
+    try:
+        answer = generator.generate_answer(question=question, retrieved_chunks=result["all_results"])
+    except Exception as e:
+        logger.error(f"LLM generation failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate answer")
+
+    elapsed = round(time.time() - start_time, 3)
+
+    # Handle conversation
+    conv_id = conversation_id if conversation_id != 0 else None
+    if conv_id:
+        conversation = db.query(Conversation).filter(
+            Conversation.id == conv_id,
+            Conversation.user_id == current_user.id
+        ).first()
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+    else:
+        conversation = Conversation(user_id=current_user.id, title=question[:100])
+        db.add(conversation)
+        db.commit()
+        db.refresh(conversation)
+
+    # Save message
+    context_text = "\n---\n".join([r["text"] for r in result["all_results"]])
+    message = ChatMessage(
+        conversation_id=conversation.id,
+        user_query=question,
+        retrieved_context=context_text,
+        llm_response=answer,
+        response_time=elapsed
+    )
+    db.add(message)
+    db.commit()
+
+    # Build sources
+    sources = []
+    for r in result["all_results"]:
+        sources.append(SourceChunk(
+            chunk_id=r["chunk_id"],
+            text=r["text"],
+            distance=r["distance"],
+            category=r["metadata"].get("issue_area", "")
+        ))
+
+    # Log to MLflow
+    tracker.log_chat_query(
+        question=question, answer=answer,
+        confidence=result["confidence"], response_time=elapsed,
+        n_results=n_results, sources_count=len(sources),
+        category=result["category"], user_id=current_user.id,
+        conversation_id=conversation.id
+    )
+
+    # Prometheus metrics
+    chat_requests_total.labels(status="success").inc()
+    chat_response_seconds.observe(elapsed)
+    retrieval_confidence.observe(result["confidence"])
+
+    return {
+        "transcription": question,
+        "answer": answer,
+        "confidence": result["confidence"],
+        "matched_question": result["matched_question"],
+        "category": result["category"],
+        "sources": sources,
+        "conversation_id": conversation.id
+    }
+
 
 
 # GET all conversations for the logged-in user
