@@ -33,6 +33,9 @@ class ChatResponse(BaseModel):
     category: str
     sources: List[SourceChunk]
     conversation_id: int
+    intent: Optional[str] = None          
+    pipeline: Optional[str] = None       
+    verified: Optional[bool] = None 
 
 
 # --- Feedback Models ---

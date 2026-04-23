@@ -18,6 +18,7 @@ from app.core.security import get_current_user
 from app.nlp.retrieval import Retriever
 from app.nlp.generator import Generator
 from app.nlp.transcriber import Transcriber
+from app.nlp.router import LLMRouter
 from app.mlops.tracker import tracker
 from app.mlops.metrics import (
     chat_requests_total, chat_response_seconds, retrieval_confidence
@@ -28,6 +29,11 @@ router = APIRouter(prefix="/chat", tags=["Chat"])
 retriever = Retriever()
 generator = Generator()
 transcriber = Transcriber()
+llm_router = LLMRouter()
+
+# Confidence thresholds
+HIGH_CONFIDENCE = 0.5
+LOW_CONFIDENCE = 0.2
 
 
 @router.post("/ask", response_model=ChatResponse)
@@ -69,27 +75,73 @@ def ask_question(
             logger.error(f"Failed to create conversation: {str(e)}", exc_info=True)
             raise HTTPException(status_code=500, detail="Failed to create conversation")
 
-    # Step 2: Load conversation history (last 6 messages for context)
+    # Step 2: Load conversation history
     conversation_history = []
     if body.conversation_id and conversation:
         previous_messages = db.query(ChatMessage).filter(
             ChatMessage.conversation_id == conversation.id
         ).order_by(ChatMessage.created_at.desc()).limit(6).all()
-
         previous_messages.reverse()
-
         for msg in previous_messages:
             conversation_history.append({"role": "user", "content": msg.user_query})
             conversation_history.append({"role": "assistant", "content": msg.llm_response})
-
         logger.info(f"Loaded conversation history: messages={len(previous_messages)}, conversation_id={conversation.id}")
 
-    # Step 2.5: Rewrite vague follow-up questions for better retrieval
+    # Step 3: LLM Router — classify intent
+    route = llm_router.classify(body.question)
+    intent = route["intent"].lower()
+    logger.info(f"Router decision: intent={intent}, user_id={current_user.id}")
+
+    # ============================================
+    # CASUAL PATH — Skip retrieval entirely
+    # ============================================
+    if intent == "casual":
+        try:
+            answer = generator.direct_answer(body.question, conversation_history)
+        except Exception as e:
+            logger.error(f"Direct answer failed: {str(e)}", exc_info=True)
+            raise HTTPException(status_code=500, detail="Failed to generate answer")
+
+        elapsed = round(time.time() - start_time, 3)
+
+        # Save message to DB
+        message = ChatMessage(
+            conversation_id=conversation.id,
+            user_query=body.question,
+            retrieved_context="[CASUAL - No retrieval needed]",
+            llm_response=answer,
+            response_time=elapsed
+        )
+        db.add(message)
+        db.commit()
+
+        chat_requests_total.labels(status="success").inc()
+        chat_response_seconds.observe(elapsed)
+
+        logger.info(f"Casual query completed: user_id={current_user.id}, pipeline=casual, duration={elapsed}")
+
+        return ChatResponse(
+            answer=answer,
+            confidence=1.0,
+            matched_question="",
+            category="General",
+            sources=[],
+            conversation_id=conversation.id,
+            intent="casual",
+            pipeline="casual",
+            verified=None
+        )
+
+    # ============================================
+    # SUPPORT PATH — Full RAG pipeline
+    # ============================================
+
+    # Step 4: Rewrite vague follow-up questions
     search_query = body.question
     if conversation_history:
         search_query = generator.rewrite_query(body.question, conversation_history)
 
-    # Step 3: Retrieve context from ChromaDB
+    # Step 5: Retrieve context from ChromaDB
     retrieval_start = time.time()
     result = retriever.get_answer_with_context(
         question=search_query,
@@ -98,7 +150,7 @@ def ask_question(
     retrieval_time = round((time.time() - retrieval_start) * 1000, 2)
     logger.info(f"Retrieval completed: chunks_found={len(result['all_results'])}, confidence={result['confidence']}, duration_ms={retrieval_time}")
 
-    # Step 4: Generate answer using LLM (with conversation history)
+    # Step 6: Generate answer using LLM
     gen_start = time.time()
     try:
         answer = generator.generate_answer(
@@ -107,20 +159,39 @@ def ask_question(
             conversation_history=conversation_history
         )
     except Exception as e:
-        logger.error(f"LLM generation failed: {str(e)}", extra={
-            "user_id": current_user.id,
-            "question_len": len(body.question)
-        }, exc_info=True)
+        logger.error(f"LLM generation failed: {str(e)}", exc_info=True)
         chat_requests_total.labels(status="error").inc()
         raise HTTPException(status_code=500, detail="Failed to generate answer")
 
     gen_time = round((time.time() - gen_start) * 1000, 2)
     logger.info(f"LLM generation completed: answer_len={len(answer)}, duration_ms={gen_time}")
 
+    # Step 7: Determine confidence level and verify if needed
+    confidence = result["confidence"]
+    verified = None
+    pipeline = "medium_confidence"
+
+    if confidence >= HIGH_CONFIDENCE:
+        pipeline = "high_confidence"
+        logger.info(f"High confidence path: confidence={confidence}")
+
+    elif confidence < LOW_CONFIDENCE:
+        # Low confidence — verify the answer
+        context_text = "\n".join([r["text"] for r in result["all_results"]])
+        verification = generator.verify_answer(body.question, answer, context_text)
+        verified = verification["is_valid"]
+
+        if verified:
+            pipeline = "low_confidence_verified"
+            logger.info(f"Low confidence VERIFIED: confidence={confidence}")
+        else:
+            pipeline = "low_confidence_rejected"
+            answer = "I'm sorry, I don't have enough information to answer that question accurately. Could you please rephrase or provide more details?"
+            logger.info(f"Low confidence REJECTED: confidence={confidence}")
+
     elapsed = round(time.time() - start_time, 3)
 
-    # Step 5: Save message to DB
-    db_start = time.time()
+    # Step 8: Save message to DB
     context_text = "\n---\n".join([r["text"] for r in result["all_results"]])
     message = ChatMessage(
         conversation_id=conversation.id,
@@ -132,9 +203,6 @@ def ask_question(
     db.add(message)
     db.commit()
 
-    db_time = round((time.time() - db_start) * 1000, 2)
-    logger.info(f"Chat message saved: conversation_id={conversation.id}, duration_ms={db_time}")
-
     # Build sources
     sources = []
     for r in result["all_results"]:
@@ -145,33 +213,32 @@ def ask_question(
             category=r["metadata"].get("issue_area", "")
         ))
 
-    # --- Log to MLflow ---
+    # Log to MLflow
     tracker.log_chat_query(
-        question=body.question,
-        answer=answer,
-        confidence=result["confidence"],
-        response_time=elapsed,
-        n_results=body.n_results,
-        sources_count=len(sources),
-        category=result["category"],
-        user_id=current_user.id,
+        question=body.question, answer=answer,
+        confidence=confidence, response_time=elapsed,
+        n_results=body.n_results, sources_count=len(sources),
+        category=result["category"], user_id=current_user.id,
         conversation_id=conversation.id
     )
 
-    # --- Record Prometheus metrics ---
+    # Prometheus metrics
     chat_requests_total.labels(status="success").inc()
     chat_response_seconds.observe(elapsed)
-    retrieval_confidence.observe(result["confidence"])
+    retrieval_confidence.observe(confidence)
 
-    logger.info(f"Chat query completed: user_id={current_user.id}, conversation_id={conversation.id}, total_duration_ms={elapsed}")
+    logger.info(f"Support query completed: user_id={current_user.id}, pipeline={pipeline}, confidence={confidence}, duration={elapsed}")
 
     return ChatResponse(
         answer=answer,
-        confidence=result["confidence"],
+        confidence=confidence,
         matched_question=result["matched_question"],
         category=result["category"],
         sources=sources,
-        conversation_id=conversation.id
+        conversation_id=conversation.id,
+        intent="support",
+        pipeline=pipeline,
+        verified=verified
     )
 
 @router.post("/voice")

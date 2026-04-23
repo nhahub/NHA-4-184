@@ -111,3 +111,83 @@ Context:
         except Exception:
             logger.warning(f"Query rewrite failed, using original question")
             return question
+    
+    def direct_answer(self, question: str, conversation_history: List[Dict] = None) -> str:
+        """Answer casual questions directly without any RAG context."""
+        logger.info(f"Direct answer started: question_len={len(question)}")
+        start_time = time.time()
+
+        messages = [
+            {"role": "system", "content": (
+                "You are a friendly customer support assistant for BrownBox (an e-commerce company). "
+                "The user is making casual conversation (greeting, thanks, goodbye, etc). "
+                "Respond naturally and briefly. Keep it warm and professional. "
+                "If they greet you, greet them back and ask how you can help. "
+                "Do NOT make up any product or order information."
+            )}
+        ]
+
+        if conversation_history:
+            for msg in conversation_history:
+                messages.append({"role": msg["role"], "content": msg["content"]})
+
+        messages.append({"role": "user", "content": question})
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=0.5,
+                max_tokens=200
+            )
+            answer = response.choices[0].message.content
+            duration_ms = round((time.time() - start_time) * 1000, 2)
+            logger.info(f"Direct answer completed: answer_len={len(answer)}, duration_ms={duration_ms}")
+            return answer
+        except Exception as e:
+            logger.error(f"Direct answer failed: {str(e)}", exc_info=True)
+            raise
+
+    def verify_answer(self, question: str, answer: str, context: str) -> Dict:
+        """Verify if the generated answer actually addresses the question."""
+        logger.info(f"Verification started: question_len={len(question)}, answer_len={len(answer)}")
+        start_time = time.time()
+
+        messages = [
+            {"role": "system", "content": (
+                "You are an answer quality checker. Given a customer question, "
+                "a generated answer, and the source context, determine if the answer "
+                "correctly addresses the question.\n\n"
+                "Output ONLY one word:\n"
+                "VALID - The answer is relevant and addresses the question\n"
+                "INVALID - The answer does not address the question or is made up"
+            )},
+            {"role": "user", "content": (
+                f"Question: {question}\n\n"
+                f"Answer: {answer}\n\n"
+                f"Source Context: {context[:500]}"
+            )}
+        ]
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=0,
+                max_tokens=10
+            )
+            result = response.choices[0].message.content.strip().upper()
+            is_valid = "VALID" in result and "INVALID" not in result
+            duration_ms = round((time.time() - start_time) * 1000, 2)
+            logger.info(f"Verification completed: result={result}, is_valid={is_valid}, duration_ms={duration_ms}")
+
+            return {
+                "is_valid": is_valid,
+                "result": result,
+                "duration_ms": duration_ms
+            }
+        except Exception as e:
+            logger.error(f"Verification failed: {str(e)}", exc_info=True)
+            # Default to valid on failure (don't block the answer)
+            return {"is_valid": True, "result": "ERROR", "duration_ms": 0}
+
