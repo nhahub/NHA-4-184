@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Plan - Customer Support RAG Chatbot</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @page {
+            size: A4;
+            margin: 20mm 18mm;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            color: #1e293b;
+            background: #ffffff;
+            line-height: 1.6;
+            font-size: 11pt;
+        }
+
+        /* ==================== COVER / HEADER ==================== */
+        .cover {
+            text-align: center;
+            padding: 50px 20px 40px;
+            border-bottom: 3px solid #2563eb;
+            margin-bottom: 35px;
+        }
+
+        .cover h1 {
+            font-size: 28pt;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .cover .subtitle {
+            font-size: 16pt;
+            font-weight: 400;
+            color: #2563eb;
+            margin-bottom: 25px;
+        }
+
+        .cover .project-info {
+            font-size: 10pt;
+            color: #64748b;
+            line-height: 1.8;
+        }
+
+        .cover .project-info strong {
+            color: #334155;
+        }
+
+        /* ==================== SECTIONS ==================== */
+        .section {
+            margin-bottom: 35px;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            font-size: 16pt;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 5px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #2563eb;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .number {
+            background: #2563eb;
+            color: #ffffff;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13pt;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .section-desc {
+            font-size: 10pt;
+            color: #64748b;
+            margin-bottom: 18px;
+            margin-top: 8px;
+        }
+
+        /* ==================== TABLES ==================== */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9.5pt;
+            margin-bottom: 10px;
+        }
+
+        thead th {
+            background: #1e293b;
+            color: #ffffff;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        thead th:first-child {
+            border-radius: 6px 0 0 0;
+        }
+
+        thead th:last-child {
+            border-radius: 0 6px 0 0;
+        }
+
+        tbody td {
+            padding: 9px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: top;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        tbody tr:hover {
+            background: #eff6ff;
+        }
+
+        tbody tr:last-child td:first-child {
+            border-radius: 0 0 0 6px;
+        }
+
+        tbody tr:last-child td:last-child {
+            border-radius: 0 0 6px 0;
+        }
+
+        /* ==================== GANTT CHART ==================== */
+        .gantt-container {
+            margin-top: 15px;
+            overflow-x: auto;
+        }
+
+        .gantt-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9pt;
+        }
+
+        .gantt-table thead th {
+            padding: 8px 6px;
+            text-align: center;
+            font-size: 8pt;
+        }
+
+        .gantt-table thead th:first-child {
+            text-align: left;
+            min-width: 200px;
+        }
+
+        .gantt-table tbody td {
+            padding: 6px;
+            text-align: center;
+            position: relative;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .gantt-table tbody td:first-child {
+            text-align: left;
+            font-weight: 500;
+            padding-left: 12px;
+        }
+
+        .gantt-bar {
+            height: 22px;
+            border-radius: 4px;
+            min-width: 100%;
+        }
+
+        .bar-1 { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+        .bar-2 { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+        .bar-3 { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
+        .bar-4 { background: linear-gradient(135deg, #10b981, #34d399); }
+        .bar-5 { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+        .bar-6 { background: linear-gradient(135deg, #ef4444, #f87171); }
+        .bar-7 { background: linear-gradient(135deg, #ec4899, #f472b6); }
+        .bar-8 { background: linear-gradient(135deg, #6366f1, #818cf8); }
+        .bar-9 { background: linear-gradient(135deg, #14b8a6, #2dd4bf); }
+
+        .empty-cell {
+            background: transparent;
+        }
+
+        /* ==================== RESOURCE CARDS ==================== */
+        .resource-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .resource-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 18px;
+            background: #f8fafc;
+        }
+
+        .resource-card h4 {
+            font-size: 10pt;
+            font-weight: 700;
+            color: #2563eb;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .resource-card p,
+        .resource-card li {
+            font-size: 10pt;
+            color: #475569;
+            margin-bottom: 3px;
+        }
+
+        .resource-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .resource-card ul li::before {
+            content: "•";
+            color: #2563eb;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .resource-card .big-number {
+            font-size: 28pt;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 2px;
+        }
+
+        /* ==================== MILESTONE BADGES ==================== */
+        .milestone-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 8pt;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .badge-data { background: #3b82f6; }
+        .badge-retrieval { background: #8b5cf6; }
+        .badge-generation { background: #06b6d4; }
+        .badge-backend { background: #10b981; }
+        .badge-frontend { background: #f59e0b; color: #1e293b; }
+        .badge-mlops { background: #ef4444; }
+
+        /* ==================== FOOTER ==================== */
+        .footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 8.5pt;
+            color: #94a3b8;
+            margin-top: 40px;
+        }
+
+        /* ==================== PRINT ==================== */
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .section {
+                page-break-inside: avoid;
+            }
+
+            .gantt-container {
+                page-break-inside: avoid;
+            }
+        }
+
+        .deliverables-list {
+            font-size: 9pt;
+            color: #475569;
+            line-height: 1.5;
+        }
+
+        .phase-label {
+            font-weight: 600;
+            color: #1e293b;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== COVER ==================== -->
+    <div class="cover">
+        <h1>Project Plan</h1>
+        <div class="subtitle">Customer Support RAG Chatbot</div>
+        <div class="project-info">
+            <strong>Project Type:</strong> Depi Graduation Project<br>
+            <strong>Domain:</strong> AI-Powered E-Commerce Customer Support<br>
+            <strong>Duration:</strong> 11 Weeks<br>
+            <strong>Team Size:</strong> 5 Members
+        </div>
+    </div>
+
+    <!-- ==================== 1. TIMELINE ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="number">1</span>
+            Timeline
+        </div>
+        <p class="section-desc">The project follows an 11-week development cycle divided into 9 overlapping phases. The Gantt chart below illustrates the schedule and task dependencies.</p>
+
+        <!-- Timeline Table -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Phase</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Duration</th>
+                    <th>Milestone</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Data Collection & Exploration</td>
+                    <td>Week 1</td>
+                    <td>Week 2</td>
+                    <td>2 weeks</td>
+                    <td><span class="milestone-badge badge-data">Data Collection & Cleaning</span></td>
+                </tr>
+                <tr>
+                    <td>Data Cleaning & Preprocessing</td>
+                    <td>Week 2</td>
+                    <td>Week 3</td>
+                    <td>1.5 weeks</td>
+                    <td><span class="milestone-badge badge-data">Data Collection & Cleaning</span></td>
+                </tr>
+                <tr>
+                    <td>NLP & Embedding Pipeline</td>
+                    <td>Week 3</td>
+                    <td>Week 5</td>
+                    <td>2 weeks</td>
+                    <td><span class="milestone-badge badge-retrieval">Retrieval</span></td>
+                </tr>
+                <tr>
+                    <td>Backend API Development</td>
+                    <td>Week 4</td>
+                    <td>Week 6</td>
+                    <td>3 weeks</td>
+                    <td><span class="milestone-badge badge-backend">Backend</span></td>
+                </tr>
+                <tr>
+                    <td>RAG Pipeline Integration</td>
+                    <td>Week 5</td>
+                    <td>Week 7</td>
+                    <td>2 weeks</td>
+                    <td><span class="milestone-badge badge-generation">Generation</span></td>
+                </tr>
+                <tr>
+                    <td>Authentication & Security</td>
+                    <td>Week 7</td>
+                    <td>Week 8</td>
+                    <td>1.5 weeks</td>
+                    <td><span class="milestone-badge badge-backend">Backend</span></td>
+                </tr>
+                <tr>
+                    <td>MLOps & Monitoring</td>
+                    <td>Week 8</td>
+                    <td>Week 9</td>
+                    <td>1.5 weeks</td>
+                    <td><span class="milestone-badge badge-mlops">MLOps</span></td>
+                </tr>
+                <tr>
+                    <td>Adaptive RAG & Testing</td>
+                    <td>Week 9</td>
+                    <td>Week 10</td>
+                    <td>1.5 weeks</td>
+                    <td><span class="milestone-badge badge-generation">Generation</span></td>
+                </tr>
+                <tr>
+                    <td>Documentation & Deployment</td>
+                    <td>Week 10</td>
+                    <td>Week 11</td>
+                    <td>1 week</td>
+                    <td><span class="milestone-badge badge-frontend">Frontend</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Gantt Chart -->
+        <div class="gantt-container">
+            <table class="gantt-table">
+                <thead>
+                    <tr>
+                        <th style="background: #1e293b; color: #fff;">Phase</th>
+                        <th style="background: #1e293b; color: #fff;">W1</th>
+                        <th style="background: #1e293b; color: #fff;">W2</th>
+                        <th style="background: #1e293b; color: #fff;">W3</th>
+                        <th style="background: #1e293b; color: #fff;">W4</th>
+                        <th style="background: #1e293b; color: #fff;">W5</th>
+                        <th style="background: #1e293b; color: #fff;">W6</th>
+                        <th style="background: #1e293b; color: #fff;">W7</th>
+                        <th style="background: #1e293b; color: #fff;">W8</th>
+                        <th style="background: #1e293b; color: #fff;">W9</th>
+                        <th style="background: #1e293b; color: #fff;">W10</th>
+                        <th style="background: #1e293b; color: #fff;">W11</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Data Collection & Exploration</td>
+                        <td><div class="gantt-bar bar-1"></div></td>
+                        <td><div class="gantt-bar bar-1"></div></td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                    <tr>
+                        <td>Data Cleaning & Preprocessing</td>
+                        <td></td>
+                        <td><div class="gantt-bar bar-2"></div></td>
+                        <td><div class="gantt-bar bar-2"></div></td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                    <tr>
+                        <td>NLP & Embedding Pipeline</td>
+                        <td></td><td></td>
+                        <td><div class="gantt-bar bar-3"></div></td>
+                        <td><div class="gantt-bar bar-3"></div></td>
+                        <td><div class="gantt-bar bar-3"></div></td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                    <tr>
+                        <td>Backend API Development</td>
+                        <td></td><td></td><td></td>
+                        <td><div class="gantt-bar bar-4"></div></td>
+                        <td><div class="gantt-bar bar-4"></div></td>
+                        <td><div class="gantt-bar bar-4"></div></td>
+                        <td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                    <tr>
+                        <td>RAG Pipeline Integration</td>
+                        <td></td><td></td><td></td><td></td>
+                        <td><div class="gantt-bar bar-5"></div></td>
+                        <td><div class="gantt-bar bar-5"></div></td>
+                        <td><div class="gantt-bar bar-5"></div></td>
+                        <td></td><td></td><td></td><td></td>
+                    </tr>
+                    <tr>
+                        <td>Authentication & Security</td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td>
+                        <td><div class="gantt-bar bar-6"></div></td>
+                        <td><div class="gantt-bar bar-6"></div></td>
+                        <td></td><td></td><td></td>
+                    </tr>
+                    <tr>
+                        <td>MLOps & Monitoring</td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                        <td><div class="gantt-bar bar-7"></div></td>
+                        <td><div class="gantt-bar bar-7"></div></td>
+                        <td></td><td></td>
+                    </tr>
+                    <tr>
+                        <td>Adaptive RAG & Testing</td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                        <td><div class="gantt-bar bar-8"></div></td>
+                        <td><div class="gantt-bar bar-8"></div></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Documentation & Deployment</td>
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                        <td><div class="gantt-bar bar-9"></div></td>
+                        <td><div class="gantt-bar bar-9"></div></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ==================== 2. MILESTONES & DELIVERABLES ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="number">2</span>
+            Milestones & Deliverables
+        </div>
+        <p class="section-desc">The project is organized around 6 core milestones. Each milestone produces specific deliverables that feed into subsequent phases.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 5%;">#</th>
+                    <th style="width: 20%;">Milestone</th>
+                    <th style="width: 15%;">Timeline</th>
+                    <th style="width: 60%;">Deliverables</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="font-weight: 700; color: #2563eb;">M1</td>
+                    <td><span class="phase-label">Data Collection & Cleaning</span></td>
+                    <td>Week 1 – Week 3</td>
+                    <td class="deliverables-list">
+                        • Raw dataset (BrownBox e-commerce Q&A — 46,924 records)<br>
+                        • Cleaned dataset (<code>cleaned_data.csv</code>)<br>
+                        • QA chunks dataset (<code>qa_chunks.csv</code>)<br>
+                        • Exploratory Data Analysis (EDA) notebooks<br>
+                        • Data cleaning & preprocessing notebooks
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 700; color: #8b5cf6;">M2</td>
+                    <td><span class="phase-label">Retrieval</span></td>
+                    <td>Week 3 – Week 5</td>
+                    <td class="deliverables-list">
+                        • Sentence-Transformers embedding pipeline (<code>all-MiniLM-L6-v2</code>)<br>
+                        • ChromaDB vector database with ingested FAQ data<br>
+                        • Retriever module with confidence scoring (<code>1 - distance</code>)<br>
+                        • Data ingestion script (<code>ingest_data.py</code>)<br>
+                        • Embedding experiments notebook
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 700; color: #06b6d4;">M3</td>
+                    <td><span class="phase-label">Generation</span></td>
+                    <td>Week 5 – Week 10</td>
+                    <td class="deliverables-list">
+                        • LLM Generator with 4 methods (generate, rewrite, verify, direct answer)<br>
+                        • Adaptive RAG pipeline with 5 confidence paths<br>
+                        • LLM Intent Router (CASUAL vs SUPPORT classification)<br>
+                        • Query rewriting for vague follow-up questions<br>
+                        • Answer verification layer for low-confidence responses<br>
+                        • Pipeline benchmark test suite with MLflow logging
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 700; color: #10b981;">M4</td>
+                    <td><span class="phase-label">Backend</span></td>
+                    <td>Week 4 – Week 8</td>
+                    <td class="deliverables-list">
+                        • FastAPI REST API with structured endpoints<br>
+                        • PostgreSQL database with 5 ORM models (User, Conversation, ChatMessage, Feedback, OTPCode)<br>
+                        • Google OAuth 2.0 + JWT authentication + OTP password reset<br>
+                        • Rate limiting (SlowAPI) for critical endpoints<br>
+                        • Conversation history & memory management<br>
+                        • Voice input endpoint with Whisper speech-to-text<br>
+                        • Feedback system (thumbs up/down with comments)<br>
+                        • Structured logging middleware with unique request IDs
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 700; color: #f59e0b;">M5</td>
+                    <td><span class="phase-label">Frontend</span></td>
+                    <td>Week 10 – Week 11</td>
+                    <td class="deliverables-list">
+                        • Next.js web application<br>
+                        • Chat interface with conversation management<br>
+                        • User authentication UI (login, register, OAuth)<br>
+                        • Responsive design and deployment
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 700; color: #ef4444;">M6</td>
+                    <td><span class="phase-label">MLOps</span></td>
+                    <td>Week 8 – Week 9</td>
+                    <td class="deliverables-list">
+                        • MLflow experiment tracking (logs every chat query)<br>
+                        • Prometheus metrics (counters, histograms, gauges)<br>
+                        • Streamlit monitoring dashboard with 5 KPIs and 4 charts<br>
+                        • Configuration comparison experiments (<code>mlflow_experiment.py</code>)<br>
+                        • <code>/metrics</code> endpoint for Prometheus scraping
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ==================== 3. RESOURCE ALLOCATION ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="number">3</span>
+            Resource Allocation
+        </div>
+        <p class="section-desc">The following resources were allocated to support the development, deployment, and monitoring of the project.</p>
+
+        <div class="resource-grid">
+            <div class="resource-card">
+                <h4>Team Size</h4>
+                <div class="big-number">5</div>
+                <p>Team Members</p>
+            </div>
+
+            <div class="resource-card">
+                <h4>Cloud / APIs</h4>
+                <ul>
+                    <li>Groq API (LLM Inference)</li>
+                    <li>Google OAuth 2.0 (Authentication)</li>
+                    <li>Gmail SMTP (OTP Email Delivery)</li>
+                </ul>
+            </div>
+
+            <div class="resource-card">
+                <h4>Software Stack</h4>
+                <ul>
+                    <li>Python (Core Language)</li>
+                    <li>FastAPI (Backend Framework)</li>
+                    <li>PostgreSQL (Relational Database)</li>
+                    <li>ChromaDB (Vector Database)</li>
+                    <li>MLflow (Experiment Tracking)</li>
+                    <li>Next.js (Frontend Framework)</li>
+                </ul>
+            </div>
+
+            <div class="resource-card">
+                <h4>AI / ML Models</h4>
+                <ul>
+                    <li>Llama 3.3 70B Versatile — via Groq (LLM)</li>
+                    <li>all-MiniLM-L6-v2 — Sentence-Transformers (Embeddings)</li>
+                    <li>Whisper Small — OpenAI (Speech-to-Text)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== FOOTER ==================== -->
+    <div class="footer">
+        Customer Support RAG Chatbot — Depi Graduation Project &nbsp;|&nbsp; Project Plan Document
+    </div>
+
+</body>
+</html>
