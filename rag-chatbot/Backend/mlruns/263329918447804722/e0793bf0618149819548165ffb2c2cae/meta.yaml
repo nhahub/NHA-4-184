@@ -1,0 +1,14 @@
+artifact_uri: file:///home/dev/Desktop/Depi Project/env/src/rag-chatbot/Backend/mlruns/263329918447804722/e0793bf0618149819548165ffb2c2cae/artifacts
+end_time: 1776963999448
+entry_point_name: ''
+experiment_id: '263329918447804722'
+lifecycle_stage: active
+run_id: e0793bf0618149819548165ffb2c2cae
+run_name: query_38_1776963999
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1776963999426
+status: 3
+tags: []
+user_id: dev
