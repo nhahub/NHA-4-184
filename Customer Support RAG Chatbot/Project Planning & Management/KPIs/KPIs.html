@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KPIs - Customer Support RAG Chatbot</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4; margin: 20mm 18mm; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            color: #1e293b;
+            background: #ffffff;
+            line-height: 1.6;
+            font-size: 11pt;
+        }
+
+        /* ==================== COVER ==================== */
+        .cover {
+            text-align: center;
+            padding: 50px 20px 40px;
+            border-bottom: 3px solid #2563eb;
+            margin-bottom: 35px;
+        }
+
+        .cover h1 {
+            font-size: 26pt;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .cover .subtitle {
+            font-size: 16pt;
+            font-weight: 400;
+            color: #2563eb;
+            margin-bottom: 25px;
+        }
+
+        .cover .project-info {
+            font-size: 10pt;
+            color: #64748b;
+            line-height: 1.8;
+        }
+
+        .cover .project-info strong { color: #334155; }
+
+        /* ==================== SECTIONS ==================== */
+        .section {
+            margin-bottom: 40px;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            font-size: 16pt;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 5px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #2563eb;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .number {
+            background: #2563eb;
+            color: #ffffff;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13pt;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .section-desc {
+            font-size: 10pt;
+            color: #64748b;
+            margin-bottom: 22px;
+            margin-top: 8px;
+        }
+
+        /* ==================== KPI CARDS ==================== */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-top: 15px;
+        }
+
+        .kpi-card {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+        }
+
+        .kpi-header {
+            padding: 16px 22px;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .kpi-number {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12pt;
+            font-weight: 800;
+            color: #ffffff;
+            flex-shrink: 0;
+        }
+
+        .kpi-number.blue { background: rgba(37, 99, 235, 0.35); border: 1px solid rgba(37, 99, 235, 0.5); }
+        .kpi-number.purple { background: rgba(139, 92, 246, 0.35); border: 1px solid rgba(139, 92, 246, 0.5); }
+        .kpi-number.green { background: rgba(16, 185, 129, 0.35); border: 1px solid rgba(16, 185, 129, 0.5); }
+        .kpi-number.orange { background: rgba(245, 158, 11, 0.35); border: 1px solid rgba(245, 158, 11, 0.5); }
+        .kpi-number.cyan { background: rgba(6, 182, 212, 0.35); border: 1px solid rgba(6, 182, 212, 0.5); }
+
+        .kpi-header-text .kpi-name {
+            font-size: 11pt;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .kpi-header-text .kpi-type {
+            font-size: 8pt;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-top: 2px;
+        }
+
+        .kpi-body {
+            padding: 18px 22px;
+            background: #ffffff;
+        }
+
+        .kpi-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .kpi-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .kpi-row:first-child {
+            padding-top: 0;
+        }
+
+        .kpi-label {
+            font-size: 8.5pt;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+            width: 100px;
+        }
+
+        .kpi-value {
+            font-size: 9.5pt;
+            color: #1e293b;
+            text-align: right;
+            flex: 1;
+        }
+
+        .kpi-value code {
+            background: #f1f5f9;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 8.5pt;
+            font-family: 'Courier New', monospace;
+            color: #1e293b;
+        }
+
+        /* ==================== FULL WIDTH KPI ==================== */
+        .kpi-grid.full {
+            grid-template-columns: 1fr;
+        }
+
+        /* ==================== SUMMARY TABLE ==================== */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9.5pt;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+
+        thead th {
+            background: #1e293b;
+            color: #ffffff;
+            padding: 12px 14px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 8.5pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tbody td {
+            padding: 11px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+        tbody tr:nth-child(even) { background: #f8fafc; }
+
+        .kpi-id {
+            font-weight: 700;
+            color: #2563eb;
+        }
+
+        .tool-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 8pt;
+            font-weight: 600;
+            margin: 1px 2px;
+        }
+
+        .tool-prometheus {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        .tool-mlflow {
+            background: #ede9fe;
+            color: #5b21b6;
+            border: 1px solid #ddd6fe;
+        }
+
+        .tool-streamlit {
+            background: #fce7f3;
+            color: #9d174d;
+            border: 1px solid #fbcfe8;
+        }
+
+        /* ==================== MONITORING STACK ==================== */
+        .stack-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stack-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            background: #f8fafc;
+            text-align: center;
+        }
+
+        .stack-card h4 {
+            font-size: 12pt;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .stack-card .stack-role {
+            font-size: 8pt;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 12px;
+        }
+
+        .stack-card:nth-child(1) .stack-role { color: #2563eb; }
+        .stack-card:nth-child(2) .stack-role { color: #8b5cf6; }
+        .stack-card:nth-child(3) .stack-role { color: #ec4899; }
+
+        .stack-card ul {
+            list-style: none;
+            padding: 0;
+            text-align: left;
+            font-size: 9pt;
+            color: #475569;
+        }
+
+        .stack-card ul li {
+            padding: 4px 0 4px 14px;
+            position: relative;
+        }
+
+        .stack-card ul li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 10px;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+        }
+
+        .stack-card:nth-child(1) ul li::before { background: #2563eb; }
+        .stack-card:nth-child(2) ul li::before { background: #8b5cf6; }
+        .stack-card:nth-child(3) ul li::before { background: #ec4899; }
+
+        /* ==================== FOOTER ==================== */
+        .footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 8.5pt;
+            color: #94a3b8;
+            margin-top: 40px;
+        }
+
+        @media print {
+            body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .section { page-break-inside: avoid; }
+            .kpi-card { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== COVER ==================== -->
+    <div class="cover">
+        <h1>Key Performance Indicators</h1>
+        <div class="subtitle">Customer Support RAG Chatbot</div>
+        <div class="project-info">
+            <strong>Project Type:</strong> Depi Graduation Project<br>
+            <strong>Domain:</strong> AI-Powered E-Commerce Customer Support<br>
+            <strong>Team Size:</strong> 5 Members
+        </div>
+    </div>
+
+    <!-- ==================== 1. KPI DEFINITIONS ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="number">1</span>
+            KPI Definitions
+        </div>
+        <p class="section-desc">The following Key Performance Indicators are used to measure the success and effectiveness of the chatbot system. Each KPI is tracked using the project's monitoring stack (Prometheus, MLflow, and Streamlit).</p>
+
+        <div class="kpi-grid">
+            <!-- KPI 1: Response Time -->
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <div class="kpi-number blue">K1</div>
+                    <div class="kpi-header-text">
+                        <div class="kpi-name">Response Time</div>
+                        <div class="kpi-type">Performance Metric</div>
+                    </div>
+                </div>
+                <div class="kpi-body">
+                    <div class="kpi-row">
+                        <span class="kpi-label">Description</span>
+                        <span class="kpi-value">Time taken from receiving a user query to delivering a response</span>
+                    </div>
+                    <div class="kpi-row">
+                        <span class="kpi-label">Metric</span>
+                        <span class="kpi-value"><code>RESPONSE_TIME</code> Histogram</span>
+                    </div>
+                    <div class="kpi-row">
+                        <span class="kpi-label">Tracked By</span>
+                        <span class="kpi-value"><span class="tool-badge tool-prometheus">Prometheus</span></span>
+                    </div>
+                    <div class="kpi-row">
+                        <span class="kpi-label">Goal</span>
+                        <span class="kpi-value">Minimize average response latency</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 2: Retrieval Confidence -->
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <div class="kpi-number purple">K2</div>
+                    <div class="kpi-header-text">
+                        <div class="kpi-name">Retrieval Confidence</div>
+                        <div class="kpi-type">Quality Metric</div>
+                    </div>
+                </div>
+                <div class="kpi-body">
+                    <div class="kpi-row">
+                        <span class="kpi-label">Description</span>
+                        <span class="kpi-value">Relevance score of documents retrieved from the vector database</span>
+                    </div>
+                    <div class="kpi-row">
+                        <span class="kpi-label">Metric</span>
+                        <span class="kpi-value"><code>CONFIDENCE_DISTRIBUTION</code> Histogram</span>
+                    </div>
+                    <div class="kpi-row">
+                        <span class="kpi-label">Tracked By</span>
+                        <span class="kpi-value"><span class="tool-badge tool-prometheus">Prometheus</span> <span class="tool-badge tool-mlflow">MLflow</span></span>
+                    </div>
+                    <div class="kpi-row">
+                        <span class="kpi-label">Goal</span>
+                        <span class="kpi-value">Maximize % of queries with confidence &gt; 0.5</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 3: User Feedback Score -->
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <div class="kpi-number green">K3</div>
+                    <div class="kpi-header-text">
+                        <div class="kpi-name">User Feedback Score</div>
+                        <div class="kpi-type">Satisfaction Metric</div>
+                    </div>
+                </div>
+                <div class="kpi-body">
+                    <div class="kpi-row">
+                        <span class="kpi-label">Description</span>
+                        <span class="kpi-value">Ratio of positive (thumbs up) to negative (thumbs down) user feedback</span>
+                    </div>
+                    <div class="kpi-row">
+                        <span class="kpi-label">Metric</span>
+                        <span class="kpi-value"><code>FEEDBACK_COUNTER</code> (positive / negative)</span>
+                    </div>
+                    <div class="kpi-row">
+                        <span class="kpi-label">Tracked By</span>
+                        <span class="kpi-value"><span class="tool-badge tool-prometheus">Prometheus</span> <span class="tool-badge tool-streamlit">Streamlit</span></span>
+                    </div>
+                    <div class="kpi-row">
+                        <span class="kpi-label">Goal</span>
+                        <span class="kpi-value">Maintain positive feedback rate above 80%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI 4: Request Throughput -->
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <div class="kpi-number orange">K4</div>
+                    <div class="kpi-header-text">
+                        <div class="kpi-name">Request Throughput</div>
+                        <div class="kpi-type">Reliability Metric</div>
+                    </div>
+                </div>
+                <div class="kpi-body">
+                    <div class="kpi-row">
+                        <span class="kpi-label">Description</span>
+                        <span class="kpi-value">Total number of chat requests handled successfully by the system</span>
+                    </div>
+                    <div class="kpi-row">
+                        <span class="kpi-label">Metric</span>
+                        <span class="kpi-value"><code>REQUEST_COUNTER</code> (total / by intent)</span>
+                    </div>
+                    <div class="kpi-row">
+                        <span class="kpi-label">Tracked By</span>
+                        <span class="kpi-value"><span class="tool-badge tool-prometheus">Prometheus</span> <span class="tool-badge tool-streamlit">Streamlit</span></span>
+                    </div>
+                    <div class="kpi-row">
+                        <span class="kpi-label">Goal</span>
+                        <span class="kpi-value">Handle concurrent requests with zero downtime</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI 5: Full Width -->
+        <div class="kpi-grid full" style="margin-top: 18px;">
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <div class="kpi-number cyan">K5</div>
+                    <div class="kpi-header-text">
+                        <div class="kpi-name">Pipeline Accuracy</div>
+                        <div class="kpi-type">AI Quality Metric</div>
+                    </div>
+                </div>
+                <div class="kpi-body">
+                    <div class="kpi-row">
+                        <span class="kpi-label">Description</span>
+                        <span class="kpi-value">Percentage of queries correctly routed through the 5 adaptive pipeline paths (casual, high-confidence, medium-confidence, low-confidence-verified, low-confidence-rejected)</span>
+                    </div>
+                    <div class="kpi-row">
+                        <span class="kpi-label">Metric</span>
+                        <span class="kpi-value">Benchmark test suite with 20 test queries across all 5 paths, results logged via <code>test_adaptive_pipeline.py</code></span>
+                    </div>
+                    <div class="kpi-row">
+                        <span class="kpi-label">Tracked By</span>
+                        <span class="kpi-value"><span class="tool-badge tool-mlflow">MLflow</span></span>
+                    </div>
+                    <div class="kpi-row">
+                        <span class="kpi-label">Goal</span>
+                        <span class="kpi-value">All 5 pipeline paths produce correct routing and appropriate responses</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 2. MONITORING STACK ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="number">2</span>
+            Monitoring Stack
+        </div>
+        <p class="section-desc">The KPIs above are tracked and visualized using a three-layer monitoring architecture integrated into the system.</p>
+
+        <div class="stack-grid">
+            <div class="stack-card">
+                <h4>Prometheus</h4>
+                <div class="stack-role">Real-Time Metrics Collection</div>
+                <ul>
+                    <li>Request counters by intent type</li>
+                    <li>Response time histograms</li>
+                    <li>Confidence score distribution</li>
+                    <li>Feedback counters (positive/negative)</li>
+                    <li>Exposed via <code>/metrics</code> endpoint</li>
+                </ul>
+            </div>
+
+            <div class="stack-card">
+                <h4>MLflow</h4>
+                <div class="stack-role">Experiment Tracking</div>
+                <ul>
+                    <li>Per-query logging (parameters + metrics)</li>
+                    <li>Confidence scores per query</li>
+                    <li>Pipeline path tracking</li>
+                    <li>Configuration comparison experiments</li>
+                    <li>Stored locally in <code>mlruns/</code></li>
+                </ul>
+            </div>
+
+            <div class="stack-card">
+                <h4>Streamlit</h4>
+                <div class="stack-role">Visual Dashboard</div>
+                <ul>
+                    <li>5 KPI summary cards at top</li>
+                    <li>Confidence distribution chart</li>
+                    <li>Response time trend chart</li>
+                    <li>Feedback breakdown chart</li>
+                    <li>Recent conversations table</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 3. KPI SUMMARY TABLE ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="number">3</span>
+            KPI Summary
+        </div>
+        <p class="section-desc">Overview of all defined KPIs, their categories, and tracking tools.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 5%;">#</th>
+                    <th style="width: 22%;">KPI</th>
+                    <th style="width: 15%;">Category</th>
+                    <th style="width: 28%;">Metric</th>
+                    <th style="width: 30%;">Tracked By</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="kpi-id">K1</td>
+                    <td>Response Time</td>
+                    <td>Performance</td>
+                    <td><code>RESPONSE_TIME</code></td>
+                    <td><span class="tool-badge tool-prometheus">Prometheus</span></td>
+                </tr>
+                <tr>
+                    <td class="kpi-id">K2</td>
+                    <td>Retrieval Confidence</td>
+                    <td>Quality</td>
+                    <td><code>CONFIDENCE_DISTRIBUTION</code></td>
+                    <td><span class="tool-badge tool-prometheus">Prometheus</span> <span class="tool-badge tool-mlflow">MLflow</span></td>
+                </tr>
+                <tr>
+                    <td class="kpi-id">K3</td>
+                    <td>User Feedback Score</td>
+                    <td>Satisfaction</td>
+                    <td><code>FEEDBACK_COUNTER</code></td>
+                    <td><span class="tool-badge tool-prometheus">Prometheus</span> <span class="tool-badge tool-streamlit">Streamlit</span></td>
+                </tr>
+                <tr>
+                    <td class="kpi-id">K4</td>
+                    <td>Request Throughput</td>
+                    <td>Reliability</td>
+                    <td><code>REQUEST_COUNTER</code></td>
+                    <td><span class="tool-badge tool-prometheus">Prometheus</span> <span class="tool-badge tool-streamlit">Streamlit</span></td>
+                </tr>
+                <tr>
+                    <td class="kpi-id">K5</td>
+                    <td>Pipeline Accuracy</td>
+                    <td>AI Quality</td>
+                    <td>Benchmark suite (5 paths)</td>
+                    <td><span class="tool-badge tool-mlflow">MLflow</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ==================== FOOTER ==================== -->
+    <div class="footer">
+        Customer Support RAG Chatbot — Depi Graduation Project &nbsp;|&nbsp; Key Performance Indicators
+    </div>
+
+</body>
+</html>

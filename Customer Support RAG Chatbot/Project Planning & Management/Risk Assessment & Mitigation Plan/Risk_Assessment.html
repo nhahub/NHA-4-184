@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Risk Assessment & Mitigation Plan - Customer Support RAG Chatbot</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4; margin: 20mm 18mm; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            color: #1e293b;
+            background: #ffffff;
+            line-height: 1.6;
+            font-size: 11pt;
+        }
+
+        /* ==================== COVER ==================== */
+        .cover {
+            text-align: center;
+            padding: 50px 20px 40px;
+            border-bottom: 3px solid #2563eb;
+            margin-bottom: 35px;
+        }
+
+        .cover h1 {
+            font-size: 26pt;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .cover .subtitle {
+            font-size: 16pt;
+            font-weight: 400;
+            color: #2563eb;
+            margin-bottom: 25px;
+        }
+
+        .cover .project-info {
+            font-size: 10pt;
+            color: #64748b;
+            line-height: 1.8;
+        }
+
+        .cover .project-info strong { color: #334155; }
+
+        /* ==================== SECTIONS ==================== */
+        .section {
+            margin-bottom: 40px;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            font-size: 16pt;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 5px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #2563eb;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .number {
+            background: #2563eb;
+            color: #ffffff;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13pt;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .section-desc {
+            font-size: 10pt;
+            color: #64748b;
+            margin-bottom: 22px;
+            margin-top: 8px;
+        }
+
+        /* ==================== RISK CARDS ==================== */
+        .risk-card {
+            border-radius: 12px;
+            margin-bottom: 22px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+        }
+
+        .risk-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 24px;
+        }
+
+        .risk-header.high-bg {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        }
+
+        .risk-header.medium-bg {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        }
+
+        .risk-header .risk-title {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .risk-number {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13pt;
+            font-weight: 800;
+            flex-shrink: 0;
+            color: #ffffff;
+        }
+
+        .risk-number.high { background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5); }
+        .risk-number.medium { background: rgba(245, 158, 11, 0.3); border: 1px solid rgba(245, 158, 11, 0.5); }
+
+        .risk-name {
+            font-size: 12pt;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .risk-category {
+            font-size: 8pt;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-top: 3px;
+        }
+
+        .impact-badge {
+            padding: 5px 16px;
+            border-radius: 20px;
+            font-size: 8pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .impact-high {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .impact-medium {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .risk-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            background: #ffffff;
+        }
+
+        .risk-section {
+            padding: 20px 24px;
+        }
+
+        .risk-section.description {
+            background: #fafbfc;
+            border-right: 1px solid #f1f5f9;
+        }
+
+        .risk-section.mitigation {
+            background: #f8fffe;
+        }
+
+        .risk-section-label {
+            font-size: 8pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .risk-section.description .risk-section-label {
+            color: #ef4444;
+        }
+
+        .risk-section.mitigation .risk-section-label {
+            color: #10b981;
+        }
+
+        .label-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .label-dot.red { background: #ef4444; }
+        .label-dot.green { background: #10b981; }
+
+        .risk-section p {
+            font-size: 9.5pt;
+            color: #475569;
+            line-height: 1.7;
+        }
+
+        .risk-section code {
+            background: #e2e8f0;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 8.5pt;
+            font-family: 'Courier New', monospace;
+            color: #1e293b;
+        }
+
+        /* ==================== SUMMARY TABLE ==================== */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9.5pt;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+
+        thead th {
+            background: #1e293b;
+            color: #ffffff;
+            padding: 12px 14px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 8.5pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tbody td {
+            padding: 11px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+        tbody tr:nth-child(even) { background: #f8fafc; }
+
+        .table-impact-high {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-size: 8pt;
+            font-weight: 600;
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .table-impact-medium {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-size: 8pt;
+            font-weight: 600;
+            background: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fde68a;
+        }
+
+        .status-resolved {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-size: 8pt;
+            font-weight: 600;
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+
+        .risk-id {
+            font-weight: 700;
+            color: #2563eb;
+        }
+
+        /* ==================== FOOTER ==================== */
+        .footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 8.5pt;
+            color: #94a3b8;
+            margin-top: 40px;
+        }
+
+        @media print {
+            body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .section { page-break-inside: avoid; }
+            .risk-card { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== COVER ==================== -->
+    <div class="cover">
+        <h1>Risk Assessment & Mitigation Plan</h1>
+        <div class="subtitle">Customer Support RAG Chatbot</div>
+        <div class="project-info">
+            <strong>Project Type:</strong> Depi Graduation Project<br>
+            <strong>Domain:</strong> AI-Powered E-Commerce Customer Support<br>
+            <strong>Team Size:</strong> 5 Members
+        </div>
+    </div>
+
+    <!-- ==================== 1. IDENTIFIED RISKS ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="number">1</span>
+            Identified Risks & Mitigation Strategies
+        </div>
+        <p class="section-desc">The following risks were identified during the project lifecycle. For each risk, a mitigation strategy was designed and implemented to ensure system reliability and response quality.</p>
+
+        <!-- RISK 1: LLM Hallucination -->
+        <div class="risk-card">
+            <div class="risk-header high-bg">
+                <div class="risk-title">
+                    <div class="risk-number high">R1</div>
+                    <div>
+                        <div class="risk-name">LLM Hallucinated / Incorrect Answers</div>
+                        <div class="risk-category">AI Quality Risk</div>
+                    </div>
+                </div>
+                <span class="impact-badge impact-high">High Impact</span>
+            </div>
+            <div class="risk-body">
+                <div class="risk-section description">
+                    <div class="risk-section-label"><span class="label-dot red"></span> Risk Description</div>
+                    <p>The LLM may generate fabricated or incorrect answers that are not grounded in the actual knowledge base, leading to misleading customer support responses and loss of user trust.</p>
+                </div>
+                <div class="risk-section mitigation">
+                    <div class="risk-section-label"><span class="label-dot green"></span> Mitigation Strategy</div>
+                    <p>Implemented a <strong>confidence scoring system</strong> with three thresholds (high &gt; 0.5, medium 0.2 - 0.5, low &lt; 0.2). For low-confidence responses, an <strong>answer verification layer</strong> (<code>verify_answer</code>) uses the LLM to validate whether the generated answer actually addresses the user's question. Invalid answers are rejected and replaced with a fallback message.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- RISK 2: API Spam -->
+        <div class="risk-card">
+            <div class="risk-header high-bg">
+                <div class="risk-title">
+                    <div class="risk-number high">R2</div>
+                    <div>
+                        <div class="risk-name">API Abuse & Spam Requests</div>
+                        <div class="risk-category">Security Risk</div>
+                    </div>
+                </div>
+                <span class="impact-badge impact-high">High Impact</span>
+            </div>
+            <div class="risk-body">
+                <div class="risk-section description">
+                    <div class="risk-section-label"><span class="label-dot red"></span> Risk Description</div>
+                    <p>Malicious users or bots could flood the API with excessive requests, causing server overload, increased API costs (Groq), and denial of service for legitimate users.</p>
+                </div>
+                <div class="risk-section mitigation">
+                    <div class="risk-section-label"><span class="label-dot green"></span> Mitigation Strategy</div>
+                    <p>Integrated <strong>SlowAPI rate limiting</strong> on all critical endpoints: <code>/chat/ask</code>, <code>/chat/voice</code>, and <code>/auth/register</code>. Each endpoint enforces a maximum number of requests per time window. Excessive requests receive a <code>429 Too Many Requests</code> response, protecting the system from abuse without affecting normal usage.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- RISK 3: Loss of Conversation Context -->
+        <div class="risk-card">
+            <div class="risk-header medium-bg">
+                <div class="risk-title">
+                    <div class="risk-number medium">R3</div>
+                    <div>
+                        <div class="risk-name">Loss of Conversation Context</div>
+                        <div class="risk-category">User Experience Risk</div>
+                    </div>
+                </div>
+                <span class="impact-badge impact-medium">Medium Impact</span>
+            </div>
+            <div class="risk-body">
+                <div class="risk-section description">
+                    <div class="risk-section-label"><span class="label-dot red"></span> Risk Description</div>
+                    <p>Without conversation memory, the chatbot treats every message as an isolated query. This leads to repetitive responses and failure to understand follow-up questions, degrading the user experience in multi-turn conversations.</p>
+                </div>
+                <div class="risk-section mitigation">
+                    <div class="risk-section-label"><span class="label-dot green"></span> Mitigation Strategy</div>
+                    <p>Implemented <strong>conversation history management</strong> that stores and retrieves the <strong>last 6 messages</strong> per conversation from the database. The history is injected into the LLM prompt as context, allowing the model to maintain awareness of previous exchanges and respond coherently across multiple turns within the same conversation.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- RISK 4: Unclear/Vague Queries -->
+        <div class="risk-card">
+            <div class="risk-header medium-bg">
+                <div class="risk-title">
+                    <div class="risk-number medium">R4</div>
+                    <div>
+                        <div class="risk-name">Unclear & Vague User Queries</div>
+                        <div class="risk-category">Retrieval Quality Risk</div>
+                    </div>
+                </div>
+                <span class="impact-badge impact-medium">Medium Impact</span>
+            </div>
+            <div class="risk-body">
+                <div class="risk-section description">
+                    <div class="risk-section-label"><span class="label-dot red"></span> Risk Description</div>
+                    <p>Users often send vague follow-up messages containing pronouns like <em>"that"</em>, <em>"this"</em>, <em>"it"</em>, or <em>"like the previous one"</em>. These queries fail to retrieve relevant documents from the vector database because they lack specific keywords, resulting in poor or irrelevant answers.</p>
+                </div>
+                <div class="risk-section mitigation">
+                    <div class="risk-section-label"><span class="label-dot green"></span> Mitigation Strategy</div>
+                    <p>Built a <strong>query rewriting module</strong> (<code>rewrite_query</code>) that uses the LLM to transform vague follow-up queries into clear, self-contained questions. The rewriter uses conversation history to resolve pronouns and references, ensuring the rewritten query contains explicit keywords for accurate vector database retrieval.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 2. SUMMARY TABLE ==================== -->
+    <div class="section">
+        <div class="section-title">
+            <span class="number">2</span>
+            Risk Summary
+        </div>
+        <p class="section-desc">Overview of all identified risks, their impact levels, and current resolution status.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 5%;">#</th>
+                    <th style="width: 24%;">Risk</th>
+                    <th style="width: 14%;">Category</th>
+                    <th style="width: 10%;">Impact</th>
+                    <th style="width: 35%;">Mitigation</th>
+                    <th style="width: 12%;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="risk-id">R1</td>
+                    <td>LLM Hallucinated Answers</td>
+                    <td>AI Quality</td>
+                    <td><span class="table-impact-high">High</span></td>
+                    <td>Confidence scoring + Answer verification layer</td>
+                    <td><span class="status-resolved">Resolved</span></td>
+                </tr>
+                <tr>
+                    <td class="risk-id">R2</td>
+                    <td>API Abuse & Spam</td>
+                    <td>Security</td>
+                    <td><span class="table-impact-high">High</span></td>
+                    <td>SlowAPI rate limiting on critical endpoints</td>
+                    <td><span class="status-resolved">Resolved</span></td>
+                </tr>
+                <tr>
+                    <td class="risk-id">R3</td>
+                    <td>Loss of Conversation Context</td>
+                    <td>User Experience</td>
+                    <td><span class="table-impact-medium">Medium</span></td>
+                    <td>Chat history (last 6 messages per conversation)</td>
+                    <td><span class="status-resolved">Resolved</span></td>
+                </tr>
+                <tr>
+                    <td class="risk-id">R4</td>
+                    <td>Unclear & Vague Queries</td>
+                    <td>Retrieval Quality</td>
+                    <td><span class="table-impact-medium">Medium</span></td>
+                    <td>LLM-based query rewriting module</td>
+                    <td><span class="status-resolved">Resolved</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ==================== FOOTER ==================== -->
+    <div class="footer">
+        Customer Support RAG Chatbot — Depi Graduation Project &nbsp;|&nbsp; Risk Assessment & Mitigation Plan
+    </div>
+
+</body>
+</html>
