@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deployment Strategy - RAG Customer Support Chatbot</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0f1117; color: #e0e0e0; line-height: 1.7; }
+        .page-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            padding: 60px 80px; border-bottom: 3px solid #e94560; position: relative; overflow: hidden;
+        }
+        .page-header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 80% 20%, rgba(233,69,96,0.15) 0%, transparent 50%); }
+        .page-header h1 { font-size: 2.4rem; font-weight: 800; color: #fff; position: relative; letter-spacing: -0.5px; }
+        .page-header .subtitle { font-size: 1.1rem; color: #8892b0; margin-top: 8px; font-weight: 400; position: relative; }
+        .page-header .badge { display: inline-block; background: rgba(233,69,96,0.2); color: #e94560; padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-top: 16px; border: 1px solid rgba(233,69,96,0.3); position: relative; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 50px 80px 80px; }
+        .section { margin-bottom: 50px; background: linear-gradient(135deg, #161b22 0%, #1a1f2e 100%); border-radius: 16px; padding: 40px; border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .section-number { display: inline-block; background: linear-gradient(135deg, #e94560, #c23152); color: #fff; width: 36px; height: 36px; border-radius: 10px; text-align: center; line-height: 36px; font-weight: 700; font-size: 0.95rem; margin-right: 14px; vertical-align: middle; }
+        .section h2 { font-size: 1.6rem; font-weight: 700; color: #fff; margin-bottom: 24px; display: flex; align-items: center; }
+        .section h3 { font-size: 1.15rem; font-weight: 600; color: #e94560; margin: 28px 0 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(233,69,96,0.2); }
+        .section p, .section li { color: #b0b8c8; font-size: 0.95rem; line-height: 1.8; }
+        .section ul { padding-left: 24px; margin: 12px 0; }
+        .section li { margin-bottom: 8px; }
+        .section li strong { color: #e0e0e0; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9rem; }
+        thead th { background: linear-gradient(135deg, #e94560, #c23152); color: #fff; padding: 14px 18px; text-align: left; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        thead th:first-child { border-radius: 10px 0 0 0; }
+        thead th:last-child { border-radius: 0 10px 0 0; }
+        tbody td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #b0b8c8; vertical-align: top; }
+        tbody tr:hover { background: rgba(233,69,96,0.05); }
+        tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+        .diagram-container { background: #0d1117; border-radius: 12px; padding: 30px; margin: 24px 0; border: 1px solid rgba(255,255,255,0.08); overflow-x: auto; }
+        .diagram-container .mermaid { display: flex; justify-content: center; }
+        .diagram-label { text-align: center; color: #8892b0; font-size: 0.85rem; font-style: italic; margin-top: 12px; }
+        .highlight-box { background: rgba(233,69,96,0.08); border-left: 4px solid #e94560; padding: 18px 24px; border-radius: 0 10px 10px 0; margin: 20px 0; }
+        .highlight-box p { color: #c8cede; font-size: 0.92rem; }
+        code { background: rgba(233,69,96,0.15); color: #e94560; padding: 2px 8px; border-radius: 4px; font-size: 0.88rem; font-family: 'Courier New', monospace; }
+        .footer { text-align: center; padding: 30px; color: #555; font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 40px; }
+        @media print {
+            body { background: #fff; color: #222; }
+            .page-header { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .section { border: 1px solid #ddd; box-shadow: none; background: #fff !important; }
+            .section p, .section li, tbody td { color: #333; }
+            .section h3 { color: #c23152; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <h1>Deployment Strategy and Integration</h1>
+    <div class="subtitle">Technology Stack, Deployment Architecture, Environment Configuration, and API Integration</div>
+    <div class="badge">Section 5 of 6 -- RAG-Powered Customer Support Chatbot</div>
+</div>
+
+<div class="container">
+
+    <!-- SECTION 1: Full Technology Stack -->
+    <div class="section">
+        <h2><span class="section-number">1</span> Full Technology Stack</h2>
+
+        <h3>1.1 Backend Stack</h3>
+        <table>
+            <thead><tr><th>Technology</th><th>Version</th><th>Purpose</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Python</strong></td><td>3.11+</td><td>Primary backend language</td></tr>
+                <tr><td><strong>FastAPI</strong></td><td>0.129</td><td>Async REST API framework</td></tr>
+                <tr><td><strong>Uvicorn</strong></td><td>0.40</td><td>ASGI server for FastAPI</td></tr>
+                <tr><td><strong>Gunicorn</strong></td><td>25.3</td><td>Production process manager (multi-worker)</td></tr>
+                <tr><td><strong>SQLAlchemy</strong></td><td>2.0</td><td>ORM for PostgreSQL database access</td></tr>
+                <tr><td><strong>Alembic</strong></td><td>1.18</td><td>Database migration management</td></tr>
+                <tr><td><strong>Pydantic</strong></td><td>2.12</td><td>Data validation and serialization</td></tr>
+                <tr><td><strong>SlowAPI</strong></td><td>0.1.9</td><td>Rate limiting middleware</td></tr>
+                <tr><td><strong>Authlib</strong></td><td>1.6</td><td>Google OAuth 2.0 integration</td></tr>
+                <tr><td><strong>PyJWT</strong></td><td>2.11</td><td>JWT token generation and verification</td></tr>
+                <tr><td><strong>Bcrypt</strong></td><td>5.0</td><td>Password hashing</td></tr>
+                <tr><td><strong>python-dotenv</strong></td><td>1.2</td><td>Environment variable management</td></tr>
+            </tbody>
+        </table>
+
+        <h3>1.2 AI/ML Stack (CPU-Only)</h3>
+        <table>
+            <thead><tr><th>Technology</th><th>Version</th><th>Purpose</th></tr></thead>
+            <tbody>
+                <tr><td><strong>PyTorch (CPU)</strong></td><td>2.10</td><td>Deep learning framework (CPU-only build)</td></tr>
+                <tr><td><strong>sentence-transformers</strong></td><td>5.2</td><td>Text embedding (all-MiniLM-L6-v2, 384-dim)</td></tr>
+                <tr><td><strong>ChromaDB</strong></td><td>1.5</td><td>Vector database for semantic search</td></tr>
+                <tr><td><strong>OpenAI Whisper</strong></td><td>Latest</td><td>Speech-to-text transcription (CPU mode)</td></tr>
+                <tr><td><strong>Groq SDK</strong></td><td>1.1</td><td>LLM API client (Llama 3.3 70B)</td></tr>
+                <tr><td><strong>scikit-learn</strong></td><td>1.7</td><td>ML utilities and metrics</td></tr>
+            </tbody>
+        </table>
+
+        <div class="highlight-box">
+            <p><strong>CPU-Only Decision:</strong> The system runs entirely on CPU. The LLM (Groq) and TTS (ElevenLabs) are external API calls. Only Whisper and the embedding model run locally, both of which perform well on CPU for short voice clips and small text queries.</p>
+        </div>
+
+        <h3>1.3 Database and Storage</h3>
+        <table>
+            <thead><tr><th>Technology</th><th>Version</th><th>Purpose</th></tr></thead>
+            <tbody>
+                <tr><td><strong>PostgreSQL</strong></td><td>Latest</td><td>Relational database (users, conversations, messages, feedback)</td></tr>
+                <tr><td><strong>ChromaDB PersistentClient</strong></td><td>1.5</td><td>On-disk vector storage at <code>../data/vector_db</code></td></tr>
+            </tbody>
+        </table>
+
+        <h3>1.4 Monitoring and MLOps</h3>
+        <table>
+            <thead><tr><th>Technology</th><th>Version</th><th>Purpose</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Prometheus Client</strong></td><td>0.24</td><td>Real-time metrics collection (requests, latency, confidence)</td></tr>
+                <tr><td><strong>MLflow</strong></td><td>3.10</td><td>Experiment tracking and model versioning</td></tr>
+                <tr><td><strong>Streamlit</strong></td><td>1.56</td><td>Admin analytics dashboard</td></tr>
+            </tbody>
+        </table>
+
+        <h3>1.5 Frontend Stack</h3>
+        <table>
+            <thead><tr><th>Technology</th><th>Version</th><th>Purpose</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Next.js</strong></td><td>16.2</td><td>React framework (App Router, SSR)</td></tr>
+                <tr><td><strong>React</strong></td><td>19.2</td><td>UI rendering</td></tr>
+                <tr><td><strong>TypeScript</strong></td><td>5.7</td><td>Type safety</td></tr>
+                <tr><td><strong>Tailwind CSS</strong></td><td>4.2</td><td>Utility-first styling</td></tr>
+                <tr><td><strong>shadcn/ui (Radix)</strong></td><td>Latest</td><td>Accessible component library</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 2: Deployment Diagram -->
+    <div class="section">
+        <h2><span class="section-number">2</span> Deployment Architecture Diagram</h2>
+
+        <div class="diagram-container">
+            <pre class="mermaid">
+graph TD
+    subgraph CLIENT["Client Layer"]
+        BROWSER["Web Browser\n(Desktop / Mobile)"]
+    end
+
+    subgraph FRONTEND["Frontend Server"]
+        NEXT["Next.js 16\nNode.js Runtime\nPort 3000"]
+    end
+
+    subgraph BACKEND["Backend Server"]
+        GUNICORN["Gunicorn\n(Process Manager)"]
+        UVICORN["Uvicorn Workers\n(ASGI Server)"]
+        FASTAPI["FastAPI Application\nPort 8000"]
+        WHISPER["Whisper STT\n(CPU Mode)"]
+        EMBED["Embedder\n(all-MiniLM-L6-v2)"]
+    end
+
+    subgraph DATABASES["Data Layer"]
+        PG[("PostgreSQL\nPort 5432")]
+        CHROMA[("ChromaDB\nPersistent Disk")]
+    end
+
+    subgraph EXTERNAL["External APIs"]
+        GROQ["Groq API\n(Llama 3.3 70B)"]
+        ELEVEN["ElevenLabs API\n(Text-to-Speech)"]
+        GOOGLE["Google OAuth 2.0"]
+    end
+
+    subgraph MONITORING["Monitoring"]
+        PROM["Prometheus\nMetrics Endpoint"]
+        MLFLOW["MLflow\nTracking Server"]
+        STREAMLIT["Streamlit\nDashboard Port 8501"]
+    end
+
+    BROWSER -->|"HTTPS"| NEXT
+    NEXT -->|"REST API"| FASTAPI
+    GUNICORN --> UVICORN --> FASTAPI
+    FASTAPI --> PG
+    FASTAPI --> CHROMA
+    FASTAPI --> WHISPER
+    FASTAPI --> EMBED
+    FASTAPI -->|"HTTPS"| GROQ
+    FASTAPI -->|"HTTPS"| ELEVEN
+    FASTAPI -->|"HTTPS"| GOOGLE
+    FASTAPI --> PROM
+    FASTAPI --> MLFLOW
+    STREAMLIT --> PROM
+    STREAMLIT --> MLFLOW
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 1: System Deployment Architecture Diagram</div>
+    </div>
+
+    <!-- SECTION 3: Environment Configuration -->
+    <div class="section">
+        <h2><span class="section-number">3</span> Environment Configuration</h2>
+
+        <h3>3.1 Environment Variables</h3>
+        <table>
+            <thead><tr><th>Variable</th><th>Purpose</th><th>Example</th></tr></thead>
+            <tbody>
+                <tr><td><code>DATABASE_URL</code></td><td>PostgreSQL connection string</td><td>postgresql://user:pass@localhost:5432/rag_project</td></tr>
+                <tr><td><code>JWT_SECRET</code></td><td>Secret key for JWT token signing</td><td>random-256-bit-string</td></tr>
+                <tr><td><code>GROQ_API_KEY</code></td><td>Groq LLM API authentication</td><td>gsk_xxxxxxxxxxxx</td></tr>
+                <tr><td><code>EMAIL_ADDRESS</code></td><td>Sender email for OTP verification</td><td>support@example.com</td></tr>
+                <tr><td><code>EMAIL_PASSWORD</code></td><td>App password for email SMTP</td><td>xxxx-xxxx-xxxx-xxxx</td></tr>
+                <tr><td><code>GOOGLE_CLIENT_ID</code></td><td>Google OAuth 2.0 client ID</td><td>xxxxxx.apps.googleusercontent.com</td></tr>
+                <tr><td><code>GOOGLE_CLIENT_SECRET</code></td><td>Google OAuth 2.0 client secret</td><td>GOCSPX-xxxxxxxxx</td></tr>
+                <tr><td><code>GOOGLE_REDIRECT_URI</code></td><td>OAuth callback URL</td><td>http://localhost:8000/auth/google/callback</td></tr>
+                <tr><td><code>ELEVENLABS_API_KEY</code></td><td>ElevenLabs TTS API key</td><td>sk_xxxxxxxxxxxxxxx</td></tr>
+                <tr><td><code>ELEVENLABS_VOICE_ID</code></td><td>Voice ID for TTS synthesis</td><td>EXAVITQu4vr4xnSDxMaL</td></tr>
+            </tbody>
+        </table>
+
+        <h3>3.2 Port Allocation</h3>
+        <table>
+            <thead><tr><th>Service</th><th>Port</th><th>Protocol</th></tr></thead>
+            <tbody>
+                <tr><td>Next.js Frontend</td><td>3000</td><td>HTTP</td></tr>
+                <tr><td>FastAPI Backend</td><td>8000</td><td>HTTP</td></tr>
+                <tr><td>PostgreSQL</td><td>5432</td><td>TCP</td></tr>
+                <tr><td>Streamlit Dashboard</td><td>8501</td><td>HTTP</td></tr>
+                <tr><td>MLflow Tracking</td><td>5000</td><td>HTTP</td></tr>
+                <tr><td>Prometheus Metrics</td><td>8000/metrics</td><td>HTTP</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 4: External API Integration -->
+    <div class="section">
+        <h2><span class="section-number">4</span> External API Integration</h2>
+
+        <h3>4.1 Integration Map</h3>
+        <div class="diagram-container">
+            <pre class="mermaid">
+graph LR
+    subgraph SYSTEM["RAG Chatbot Backend"]
+        R["LLMRouter"]
+        G["Generator"]
+        T["Transcriber"]
+        TTS["TextToSpeech"]
+        AUTH["AuthRouter"]
+    end
+
+    R -->|"classify intent"| GROQ["Groq API\nllama-3.3-70b-versatile"]
+    G -->|"generate answer\nrewrite query\nverify answer\ndirect answer"| GROQ
+    T -->|"local CPU"| WHISPER["OpenAI Whisper\n(Local Model)"]
+    TTS -->|"synthesize audio"| ELEVEN["ElevenLabs API\nVoice: EXAVITQu4vr4xnSDxMaL"]
+    AUTH -->|"OAuth 2.0"| GOOGLE["Google OAuth\nauthorize + token exchange"]
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 2: External API Integration Map</div>
+
+        <h3>4.2 API Details</h3>
+        <table>
+            <thead><tr><th>API</th><th>Protocol</th><th>Auth Method</th><th>Endpoints Used</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Groq</strong></td><td>HTTPS REST</td><td>API Key (Bearer)</td><td>chat.completions.create (temp=0 for routing, 0.3 for answers, 0.5 for casual)</td></tr>
+                <tr><td><strong>ElevenLabs</strong></td><td>HTTPS REST</td><td>API Key (xi-api-key)</td><td>text-to-speech/{voice_id} — returns MP3 audio bytes</td></tr>
+                <tr><td><strong>Google OAuth</strong></td><td>HTTPS</td><td>OAuth 2.0 (client_id + secret)</td><td>authorize endpoint → callback → token exchange → userinfo</td></tr>
+                <tr><td><strong>Whisper</strong></td><td>Local</td><td>None</td><td>Local model inference on CPU — no API call</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 5: API Endpoints -->
+    <div class="section">
+        <h2><span class="section-number">5</span> System API Endpoints</h2>
+
+        <table>
+            <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Rate Limit</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>POST</td><td><code>/chat/ask</code></td><td>JWT</td><td>10/min</td><td>Submit text query, returns AI answer + sources</td></tr>
+                <tr><td>POST</td><td><code>/chat/voice</code></td><td>JWT</td><td>5/min</td><td>Submit audio file, returns answer + audio_base64</td></tr>
+                <tr><td>GET</td><td><code>/chat/conversations</code></td><td>JWT</td><td>--</td><td>List user's conversations</td></tr>
+                <tr><td>GET</td><td><code>/chat/conversations/{id}</code></td><td>JWT</td><td>--</td><td>Get conversation with all messages</td></tr>
+                <tr><td>POST</td><td><code>/feedback</code></td><td>JWT</td><td>--</td><td>Submit thumbs up/down for a message</td></tr>
+                <tr><td>GET</td><td><code>/feedback/{msg_id}</code></td><td>JWT</td><td>--</td><td>Get feedback for a specific message</td></tr>
+                <tr><td>POST</td><td><code>/auth/register</code></td><td>None</td><td>--</td><td>Register new user account</td></tr>
+                <tr><td>POST</td><td><code>/auth/login</code></td><td>None</td><td>--</td><td>Login with username/password, returns JWT</td></tr>
+                <tr><td>GET</td><td><code>/auth/google</code></td><td>None</td><td>--</td><td>Redirect to Google OAuth login</td></tr>
+                <tr><td>GET</td><td><code>/auth/google/callback</code></td><td>None</td><td>--</td><td>Handle OAuth callback, returns JWT</td></tr>
+                <tr><td>GET</td><td><code>/auth/me</code></td><td>JWT</td><td>--</td><td>Get current user profile</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 6: Startup Commands -->
+    <div class="section">
+        <h2><span class="section-number">6</span> Development Setup</h2>
+
+        <h3>6.1 Backend Startup</h3>
+        <table>
+            <thead><tr><th>Step</th><th>Command</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><code>python -m venv venv</code></td><td>Create virtual environment</td></tr>
+                <tr><td>2</td><td><code>source venv/bin/activate</code></td><td>Activate environment</td></tr>
+                <tr><td>3</td><td><code>pip install -r requirements.txt</code></td><td>Install dependencies (CPU-only PyTorch)</td></tr>
+                <tr><td>4</td><td><code>cp .env.example .env</code></td><td>Configure environment variables</td></tr>
+                <tr><td>5</td><td><code>uvicorn app.main:app --reload --port 8000</code></td><td>Start FastAPI development server</td></tr>
+            </tbody>
+        </table>
+
+        <h3>6.2 Frontend Startup</h3>
+        <table>
+            <thead><tr><th>Step</th><th>Command</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><code>npm install</code></td><td>Install Node.js dependencies</td></tr>
+                <tr><td>2</td><td><code>npm run dev</code></td><td>Start Next.js on port 3000</td></tr>
+            </tbody>
+        </table>
+
+        <h3>6.3 Monitoring Startup</h3>
+        <table>
+            <thead><tr><th>Step</th><th>Command</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><code>streamlit run dashboard.py --server.port 8501</code></td><td>Start Streamlit analytics dashboard</td></tr>
+                <tr><td>2</td><td><code>mlflow ui --port 5000</code></td><td>Start MLflow tracking UI</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 7: Security -->
+    <div class="section">
+        <h2><span class="section-number">7</span> Security Measures</h2>
+        <table>
+            <thead><tr><th>Measure</th><th>Implementation</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Authentication</strong></td><td>JWT tokens with expiration, Google OAuth 2.0 as alternative</td></tr>
+                <tr><td><strong>Password Storage</strong></td><td>Bcrypt hashing (never stored in plaintext)</td></tr>
+                <tr><td><strong>Rate Limiting</strong></td><td>SlowAPI: 10 req/min for text, 5 req/min for voice per user</td></tr>
+                <tr><td><strong>Input Validation</strong></td><td>Pydantic models validate all request bodies</td></tr>
+                <tr><td><strong>Environment Secrets</strong></td><td>All API keys stored in .env file, excluded from version control via .gitignore</td></tr>
+                <tr><td><strong>CORS</strong></td><td>FastAPI CORS middleware configured for allowed frontend origins</td></tr>
+                <tr><td><strong>SQL Injection</strong></td><td>SQLAlchemy ORM with parameterised queries (no raw SQL)</td></tr>
+                <tr><td><strong>OTP Verification</strong></td><td>6-digit time-limited codes for email verification during registration</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        RAG-Powered Customer Support Chatbot -- System Analysis and Design -- Section 5 of 6
+    </div>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'dark',
+        themeVariables: {
+            primaryColor: '#e94560',
+            primaryTextColor: '#fff',
+            primaryBorderColor: '#c23152',
+            lineColor: '#8892b0',
+            secondaryColor: '#16213e',
+            tertiaryColor: '#1a1a2e',
+            fontFamily: 'Inter, sans-serif'
+        },
+        flowchart: { curve: 'basis', useMaxWidth: true }
+    });
+</script>
+
+</body>
+</html>

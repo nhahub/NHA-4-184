@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Design - RAG Customer Support Chatbot</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0f1117; color: #e0e0e0; line-height: 1.7; }
+        .page-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            padding: 60px 80px; border-bottom: 3px solid #e94560; position: relative; overflow: hidden;
+        }
+        .page-header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 80% 20%, rgba(233,69,96,0.15) 0%, transparent 50%); }
+        .page-header h1 { font-size: 2.4rem; font-weight: 800; color: #fff; position: relative; letter-spacing: -0.5px; }
+        .page-header .subtitle { font-size: 1.1rem; color: #8892b0; margin-top: 8px; font-weight: 400; position: relative; }
+        .page-header .badge { display: inline-block; background: rgba(233,69,96,0.2); color: #e94560; padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-top: 16px; border: 1px solid rgba(233,69,96,0.3); position: relative; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 50px 80px 80px; }
+        .section { margin-bottom: 50px; background: linear-gradient(135deg, #161b22 0%, #1a1f2e 100%); border-radius: 16px; padding: 40px; border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .section-number { display: inline-block; background: linear-gradient(135deg, #e94560, #c23152); color: #fff; width: 36px; height: 36px; border-radius: 10px; text-align: center; line-height: 36px; font-weight: 700; font-size: 0.95rem; margin-right: 14px; vertical-align: middle; }
+        .section h2 { font-size: 1.6rem; font-weight: 700; color: #fff; margin-bottom: 24px; display: flex; align-items: center; }
+        .section h3 { font-size: 1.15rem; font-weight: 600; color: #e94560; margin: 28px 0 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(233,69,96,0.2); }
+        .section p, .section li { color: #b0b8c8; font-size: 0.95rem; line-height: 1.8; }
+        .section ul { padding-left: 24px; margin: 12px 0; }
+        .section li { margin-bottom: 8px; }
+        .section li strong { color: #e0e0e0; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9rem; }
+        thead th { background: linear-gradient(135deg, #e94560, #c23152); color: #fff; padding: 14px 18px; text-align: left; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        thead th:first-child { border-radius: 10px 0 0 0; }
+        thead th:last-child { border-radius: 0 10px 0 0; }
+        tbody td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #b0b8c8; vertical-align: top; }
+        tbody tr:hover { background: rgba(233,69,96,0.05); }
+        tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+        .diagram-container { background: #0d1117; border-radius: 12px; padding: 30px; margin: 24px 0; border: 1px solid rgba(255,255,255,0.08); overflow-x: auto; }
+        .diagram-container .mermaid { display: flex; justify-content: center; }
+        .diagram-label { text-align: center; color: #8892b0; font-size: 0.85rem; font-style: italic; margin-top: 12px; }
+        .highlight-box { background: rgba(233,69,96,0.08); border-left: 4px solid #e94560; padding: 18px 24px; border-radius: 0 10px 10px 0; margin: 20px 0; }
+        .highlight-box p { color: #c8cede; font-size: 0.92rem; }
+        code { background: rgba(233,69,96,0.15); color: #e94560; padding: 2px 8px; border-radius: 4px; font-size: 0.88rem; font-family: 'Courier New', monospace; }
+        .pk { color: #f0a500; font-weight: 600; }
+        .fk { color: #4fc3f7; font-weight: 600; }
+        .footer { text-align: center; padding: 30px; color: #555; font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 40px; }
+        @media print {
+            body { background: #fff; color: #222; }
+            .page-header { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .section { border: 1px solid #ddd; box-shadow: none; background: #fff !important; }
+            .section p, .section li, tbody td { color: #333; }
+            .section h3 { color: #c23152; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <h1>Database Design and Data Modelling</h1>
+    <div class="subtitle">Entity-Relationship Diagram, Logical Schema, and Physical Schema</div>
+    <div class="badge">Section 2 of 6 -- RAG-Powered Customer Support Chatbot</div>
+</div>
+
+<div class="container">
+
+    <!-- SECTION 1: Overview -->
+    <div class="section">
+        <h2><span class="section-number">1</span> Database Overview</h2>
+        <p>The system uses two separate data stores, each optimised for its specific purpose:</p>
+        <ul>
+            <li><strong>PostgreSQL (Relational Database):</strong> Stores structured data including user accounts, conversations, chat messages, feedback, and OTP codes. Managed through SQLAlchemy ORM with 5 normalised tables.</li>
+            <li><strong>ChromaDB (Vector Database):</strong> Stores pre-computed vector embeddings of the knowledge base (QA chunks). Used exclusively for semantic similarity search during the retrieval stage of the RAG pipeline.</li>
+        </ul>
+        <div class="highlight-box">
+            <p>This section focuses on the PostgreSQL relational database design. The ChromaDB vector store is a flat collection of embeddings and does not follow traditional relational modelling.</p>
+        </div>
+    </div>
+
+    <!-- SECTION 2: ER Diagram -->
+    <div class="section">
+        <h2><span class="section-number">2</span> Entity-Relationship Diagram</h2>
+
+        <div class="diagram-container">
+            <pre class="mermaid">
+erDiagram
+    USERS {
+        int id PK
+        varchar username UK
+        varchar email UK
+        varchar hashed_password
+        varchar google_id UK
+        varchar profile_picture
+        boolean is_active
+        datetime created_at
+    }
+
+    CONVERSATIONS {
+        int id PK
+        int user_id FK
+        varchar title
+        datetime created_at
+        datetime updated_at
+    }
+
+    CHAT_MESSAGES {
+        int id PK
+        int conversation_id FK
+        text user_query
+        text retrieved_context
+        text llm_response
+        float response_time
+        datetime created_at
+    }
+
+    FEEDBACK {
+        int id PK
+        int chat_message_id FK
+        int user_id FK
+        int rating
+        text comment
+        datetime created_at
+    }
+
+    OTP_CODES {
+        int id PK
+        int user_id FK
+        varchar code
+        datetime expires_at
+        boolean is_used
+        datetime created_at
+    }
+
+    USERS ||--o{ CONVERSATIONS : "has many"
+    CONVERSATIONS ||--o{ CHAT_MESSAGES : "contains"
+    CHAT_MESSAGES ||--o| FEEDBACK : "may have"
+    USERS ||--o{ OTP_CODES : "has many"
+    USERS ||--o{ FEEDBACK : "submits"
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 1: Entity-Relationship Diagram -- PostgreSQL Database Structure</div>
+    </div>
+
+    <!-- SECTION 3: Logical Schema -->
+    <div class="section">
+        <h2><span class="section-number">3</span> Logical Schema</h2>
+        <p>The logical schema defines the entities, their attributes, and the relationships between them independent of implementation details.</p>
+
+        <h3>3.1 Users</h3>
+        <p>Stores user account information. Supports both traditional registration and Google OAuth 2.0 authentication.</p>
+        <table>
+            <thead><tr><th>Attribute</th><th>Key</th><th>Nullable</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td class="pk">PK</td><td>No</td><td>Auto-incremented unique identifier</td></tr>
+                <tr><td>username</td><td>UNIQUE</td><td>No</td><td>Display name (max 50 chars)</td></tr>
+                <tr><td>email</td><td>UNIQUE</td><td>No</td><td>User email address (max 255 chars)</td></tr>
+                <tr><td>hashed_password</td><td>--</td><td>Yes</td><td>Bcrypt-hashed password (null for OAuth users)</td></tr>
+                <tr><td>google_id</td><td>UNIQUE</td><td>Yes</td><td>Google account ID (null for non-OAuth users)</td></tr>
+                <tr><td>profile_picture</td><td>--</td><td>Yes</td><td>URL to Google profile image</td></tr>
+                <tr><td>is_active</td><td>--</td><td>No</td><td>Account active status (default: true)</td></tr>
+                <tr><td>created_at</td><td>--</td><td>No</td><td>Account creation timestamp</td></tr>
+            </tbody>
+        </table>
+
+        <h3>3.2 Conversations</h3>
+        <p>Groups related chat messages into a single conversation thread per user.</p>
+        <table>
+            <thead><tr><th>Attribute</th><th>Key</th><th>Nullable</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td class="pk">PK</td><td>No</td><td>Auto-incremented unique identifier</td></tr>
+                <tr><td>user_id</td><td class="fk">FK -> Users</td><td>No</td><td>Owner of the conversation</td></tr>
+                <tr><td>title</td><td>--</td><td>No</td><td>Conversation title (first 100 chars of first query)</td></tr>
+                <tr><td>created_at</td><td>--</td><td>No</td><td>Conversation creation timestamp</td></tr>
+                <tr><td>updated_at</td><td>--</td><td>No</td><td>Last activity timestamp (auto-updated)</td></tr>
+            </tbody>
+        </table>
+
+        <h3>3.3 Chat Messages</h3>
+        <p>Stores each individual question-answer exchange within a conversation, including the retrieved context and performance metrics.</p>
+        <table>
+            <thead><tr><th>Attribute</th><th>Key</th><th>Nullable</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td class="pk">PK</td><td>No</td><td>Auto-incremented unique identifier</td></tr>
+                <tr><td>conversation_id</td><td class="fk">FK -> Conversations</td><td>No</td><td>Parent conversation</td></tr>
+                <tr><td>user_query</td><td>--</td><td>No</td><td>The user's original question (text)</td></tr>
+                <tr><td>retrieved_context</td><td>--</td><td>Yes</td><td>Context chunks retrieved from ChromaDB</td></tr>
+                <tr><td>llm_response</td><td>--</td><td>No</td><td>The LLM-generated answer</td></tr>
+                <tr><td>response_time</td><td>--</td><td>Yes</td><td>Total processing time in seconds</td></tr>
+                <tr><td>created_at</td><td>--</td><td>No</td><td>Message creation timestamp</td></tr>
+            </tbody>
+        </table>
+
+        <h3>3.4 Feedback</h3>
+        <p>Stores user feedback (thumbs up / thumbs down) for individual chat responses. Each message can have at most one feedback entry.</p>
+        <table>
+            <thead><tr><th>Attribute</th><th>Key</th><th>Nullable</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td class="pk">PK</td><td>No</td><td>Auto-incremented unique identifier</td></tr>
+                <tr><td>chat_message_id</td><td class="fk">FK -> ChatMessages, UNIQUE</td><td>No</td><td>The message being rated (one-to-one)</td></tr>
+                <tr><td>user_id</td><td class="fk">FK -> Users</td><td>No</td><td>The user who submitted the feedback</td></tr>
+                <tr><td>rating</td><td>--</td><td>No</td><td>1 = positive (thumbs up), -1 = negative (thumbs down)</td></tr>
+                <tr><td>comment</td><td>--</td><td>Yes</td><td>Optional text comment</td></tr>
+                <tr><td>created_at</td><td>--</td><td>No</td><td>Feedback submission timestamp</td></tr>
+            </tbody>
+        </table>
+
+        <h3>3.5 OTP Codes</h3>
+        <p>Stores one-time password codes used for email-based verification during registration.</p>
+        <table>
+            <thead><tr><th>Attribute</th><th>Key</th><th>Nullable</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td class="pk">PK</td><td>No</td><td>Auto-incremented unique identifier</td></tr>
+                <tr><td>user_id</td><td class="fk">FK -> Users</td><td>No</td><td>The user this OTP belongs to</td></tr>
+                <tr><td>code</td><td>--</td><td>No</td><td>6-digit verification code</td></tr>
+                <tr><td>expires_at</td><td>--</td><td>No</td><td>Expiration timestamp for the code</td></tr>
+                <tr><td>is_used</td><td>--</td><td>No</td><td>Whether the code has been consumed (default: false)</td></tr>
+                <tr><td>created_at</td><td>--</td><td>No</td><td>Code generation timestamp</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 4: Physical Schema -->
+    <div class="section">
+        <h2><span class="section-number">4</span> Physical Schema</h2>
+        <p>The physical schema specifies the exact PostgreSQL data types, constraints, and indexes used in the deployed database.</p>
+
+        <h3>4.1 Data Types and Constraints</h3>
+        <table>
+            <thead><tr><th>Table</th><th>Column</th><th>PostgreSQL Type</th><th>Constraints</th></tr></thead>
+            <tbody>
+                <tr><td rowspan="8"><strong>users</strong></td><td>id</td><td>SERIAL</td><td>PRIMARY KEY, INDEXED</td></tr>
+                <tr><td>username</td><td>VARCHAR(50)</td><td>NOT NULL, UNIQUE, INDEXED</td></tr>
+                <tr><td>email</td><td>VARCHAR(255)</td><td>NOT NULL, UNIQUE, INDEXED</td></tr>
+                <tr><td>hashed_password</td><td>VARCHAR(255)</td><td>NULLABLE</td></tr>
+                <tr><td>google_id</td><td>VARCHAR(255)</td><td>UNIQUE, NULLABLE</td></tr>
+                <tr><td>profile_picture</td><td>VARCHAR(500)</td><td>NULLABLE</td></tr>
+                <tr><td>is_active</td><td>BOOLEAN</td><td>DEFAULT TRUE</td></tr>
+                <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td></tr>
+
+                <tr><td rowspan="5"><strong>conversations</strong></td><td>id</td><td>SERIAL</td><td>PRIMARY KEY, INDEXED</td></tr>
+                <tr><td>user_id</td><td>INTEGER</td><td>NOT NULL, FK -> users(id)</td></tr>
+                <tr><td>title</td><td>VARCHAR(255)</td><td>NOT NULL</td></tr>
+                <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td></tr>
+                <tr><td>updated_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW(), ON UPDATE NOW()</td></tr>
+
+                <tr><td rowspan="7"><strong>chat_messages</strong></td><td>id</td><td>SERIAL</td><td>PRIMARY KEY, INDEXED</td></tr>
+                <tr><td>conversation_id</td><td>INTEGER</td><td>NOT NULL, FK -> conversations(id)</td></tr>
+                <tr><td>user_query</td><td>TEXT</td><td>NOT NULL</td></tr>
+                <tr><td>retrieved_context</td><td>TEXT</td><td>NULLABLE</td></tr>
+                <tr><td>llm_response</td><td>TEXT</td><td>NOT NULL</td></tr>
+                <tr><td>response_time</td><td>FLOAT</td><td>NULLABLE</td></tr>
+                <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td></tr>
+
+                <tr><td rowspan="6"><strong>feedback</strong></td><td>id</td><td>SERIAL</td><td>PRIMARY KEY, INDEXED</td></tr>
+                <tr><td>chat_message_id</td><td>INTEGER</td><td>NOT NULL, UNIQUE, FK -> chat_messages(id)</td></tr>
+                <tr><td>user_id</td><td>INTEGER</td><td>NOT NULL, FK -> users(id)</td></tr>
+                <tr><td>rating</td><td>INTEGER</td><td>NOT NULL (1 or -1)</td></tr>
+                <tr><td>comment</td><td>TEXT</td><td>NULLABLE</td></tr>
+                <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td></tr>
+
+                <tr><td rowspan="6"><strong>otp_codes</strong></td><td>id</td><td>SERIAL</td><td>PRIMARY KEY, INDEXED</td></tr>
+                <tr><td>user_id</td><td>INTEGER</td><td>NOT NULL, FK -> users(id)</td></tr>
+                <tr><td>code</td><td>VARCHAR(6)</td><td>NOT NULL</td></tr>
+                <tr><td>expires_at</td><td>TIMESTAMPTZ</td><td>NOT NULL</td></tr>
+                <tr><td>is_used</td><td>BOOLEAN</td><td>DEFAULT FALSE</td></tr>
+                <tr><td>created_at</td><td>TIMESTAMPTZ</td><td>DEFAULT NOW()</td></tr>
+            </tbody>
+        </table>
+
+        <h3>4.2 Indexes</h3>
+        <table>
+            <thead><tr><th>Table</th><th>Column(s)</th><th>Index Type</th><th>Purpose</th></tr></thead>
+            <tbody>
+                <tr><td>users</td><td>id</td><td>B-Tree (Primary)</td><td>Primary key lookup</td></tr>
+                <tr><td>users</td><td>username</td><td>B-Tree (Unique)</td><td>Fast username search and uniqueness enforcement</td></tr>
+                <tr><td>users</td><td>email</td><td>B-Tree (Unique)</td><td>Fast email lookup during authentication</td></tr>
+                <tr><td>conversations</td><td>id</td><td>B-Tree (Primary)</td><td>Primary key lookup</td></tr>
+                <tr><td>chat_messages</td><td>id</td><td>B-Tree (Primary)</td><td>Primary key lookup</td></tr>
+                <tr><td>feedback</td><td>id</td><td>B-Tree (Primary)</td><td>Primary key lookup</td></tr>
+                <tr><td>feedback</td><td>chat_message_id</td><td>B-Tree (Unique)</td><td>One-to-one enforcement with chat_messages</td></tr>
+                <tr><td>otp_codes</td><td>id</td><td>B-Tree (Primary)</td><td>Primary key lookup</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 5: Relationships -->
+    <div class="section">
+        <h2><span class="section-number">5</span> Relationships Summary</h2>
+        <table>
+            <thead><tr><th>Relationship</th><th>Type</th><th>Foreign Key</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>Users -> Conversations</td><td>One-to-Many</td><td>conversations.user_id</td><td>One user can have many conversations</td></tr>
+                <tr><td>Conversations -> ChatMessages</td><td>One-to-Many</td><td>chat_messages.conversation_id</td><td>One conversation contains many messages</td></tr>
+                <tr><td>ChatMessages -> Feedback</td><td>One-to-One</td><td>feedback.chat_message_id (UNIQUE)</td><td>Each message can have at most one feedback</td></tr>
+                <tr><td>Users -> Feedback</td><td>One-to-Many</td><td>feedback.user_id</td><td>One user can submit many feedback entries</td></tr>
+                <tr><td>Users -> OTPCodes</td><td>One-to-Many</td><td>otp_codes.user_id</td><td>One user can have multiple OTP codes</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 6: Normalisation -->
+    <div class="section">
+        <h2><span class="section-number">6</span> Normalisation Analysis</h2>
+        <p>The database schema satisfies the requirements of Third Normal Form (3NF):</p>
+        <ul>
+            <li><strong>First Normal Form (1NF):</strong> All columns contain atomic values. There are no repeating groups or multi-valued attributes.</li>
+            <li><strong>Second Normal Form (2NF):</strong> All non-key attributes are fully functionally dependent on the entire primary key. No partial dependencies exist since all tables use single-column primary keys.</li>
+            <li><strong>Third Normal Form (3NF):</strong> No transitive dependencies exist. All non-key attributes depend directly on the primary key and not on other non-key attributes.</li>
+        </ul>
+        <div class="highlight-box">
+            <p><strong>Design Decision:</strong> The <code>retrieved_context</code> field in <code>chat_messages</code> stores the full text of retrieved chunks (denormalised) rather than referencing chunk IDs. This is intentional because ChromaDB chunks may be re-indexed or updated independently, and preserving the exact context used at query time is essential for auditability and debugging.</p>
+        </div>
+    </div>
+
+    <!-- SECTION 7: ChromaDB -->
+    <div class="section">
+        <h2><span class="section-number">7</span> Vector Database (ChromaDB)</h2>
+        <p>ChromaDB stores the knowledge base as vector embeddings for semantic similarity search. It operates separately from PostgreSQL and does not follow relational modelling.</p>
+
+        <h3>7.1 Collection Structure</h3>
+        <table>
+            <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>String</td><td>Unique chunk identifier (e.g., <code>qa_332_2</code>)</td></tr>
+                <tr><td>document</td><td>Text</td><td>The QA text content (Question + Answer)</td></tr>
+                <tr><td>embedding</td><td>Float[384]</td><td>384-dimensional vector from all-MiniLM-L6-v2</td></tr>
+                <tr><td>metadata.issue_area</td><td>String</td><td>Category label (e.g., "Login and Account", "Order")</td></tr>
+            </tbody>
+        </table>
+
+        <h3>7.2 Search Configuration</h3>
+        <table>
+            <thead><tr><th>Parameter</th><th>Value</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>Embedding Model</td><td>all-MiniLM-L6-v2</td><td>Sentence Transformers model (384 dimensions)</td></tr>
+                <tr><td>Distance Metric</td><td>L2 (Euclidean)</td><td>ChromaDB default distance function</td></tr>
+                <tr><td>Index Type</td><td>HNSW</td><td>Approximate Nearest Neighbour index</td></tr>
+                <tr><td>Default Results</td><td>3</td><td>Top-3 most similar chunks returned per query</td></tr>
+                <tr><td>Storage</td><td>PersistentClient</td><td>Data persisted to disk at <code>../data/vector_db</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        RAG-Powered Customer Support Chatbot -- System Analysis and Design -- Section 2 of 6
+    </div>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'dark',
+        themeVariables: {
+            primaryColor: '#e94560',
+            primaryTextColor: '#fff',
+            primaryBorderColor: '#c23152',
+            lineColor: '#8892b0',
+            secondaryColor: '#16213e',
+            tertiaryColor: '#1a1a2e',
+            fontFamily: 'Inter, sans-serif'
+        }
+    });
+</script>
+
+</body>
+</html>
+

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Additional Deliverables - RAG Customer Support Chatbot</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0f1117; color: #e0e0e0; line-height: 1.7; }
+        .page-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            padding: 60px 80px; border-bottom: 3px solid #e94560; position: relative; overflow: hidden;
+        }
+        .page-header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 80% 20%, rgba(233,69,96,0.15) 0%, transparent 50%); }
+        .page-header h1 { font-size: 2.4rem; font-weight: 800; color: #fff; position: relative; letter-spacing: -0.5px; }
+        .page-header .subtitle { font-size: 1.1rem; color: #8892b0; margin-top: 8px; font-weight: 400; position: relative; }
+        .page-header .badge { display: inline-block; background: rgba(233,69,96,0.2); color: #e94560; padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-top: 16px; border: 1px solid rgba(233,69,96,0.3); position: relative; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 50px 80px 80px; }
+        .section { margin-bottom: 50px; background: linear-gradient(135deg, #161b22 0%, #1a1f2e 100%); border-radius: 16px; padding: 40px; border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .section-number { display: inline-block; background: linear-gradient(135deg, #e94560, #c23152); color: #fff; width: 36px; height: 36px; border-radius: 10px; text-align: center; line-height: 36px; font-weight: 700; font-size: 0.95rem; margin-right: 14px; vertical-align: middle; }
+        .section h2 { font-size: 1.6rem; font-weight: 700; color: #fff; margin-bottom: 24px; display: flex; align-items: center; }
+        .section h3 { font-size: 1.15rem; font-weight: 600; color: #e94560; margin: 28px 0 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(233,69,96,0.2); }
+        .section p, .section li { color: #b0b8c8; font-size: 0.95rem; line-height: 1.8; }
+        .section ul { padding-left: 24px; margin: 12px 0; }
+        .section li { margin-bottom: 8px; }
+        .section li strong { color: #e0e0e0; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9rem; }
+        thead th { background: linear-gradient(135deg, #e94560, #c23152); color: #fff; padding: 14px 18px; text-align: left; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        thead th:first-child { border-radius: 10px 0 0 0; }
+        thead th:last-child { border-radius: 0 10px 0 0; }
+        tbody td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #b0b8c8; vertical-align: top; }
+        tbody tr:hover { background: rgba(233,69,96,0.05); }
+        tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+        .diagram-container { background: #0d1117; border-radius: 12px; padding: 30px; margin: 24px 0; border: 1px solid rgba(255,255,255,0.08); overflow-x: auto; }
+        .diagram-container .mermaid { display: flex; justify-content: center; }
+        .diagram-label { text-align: center; color: #8892b0; font-size: 0.85rem; font-style: italic; margin-top: 12px; }
+        .highlight-box { background: rgba(233,69,96,0.08); border-left: 4px solid #e94560; padding: 18px 24px; border-radius: 0 10px 10px 0; margin: 20px 0; }
+        .highlight-box p { color: #c8cede; font-size: 0.92rem; }
+        code { background: rgba(233,69,96,0.15); color: #e94560; padding: 2px 8px; border-radius: 4px; font-size: 0.88rem; font-family: 'Courier New', monospace; }
+        .tree { background: #0d1117; border-radius: 12px; padding: 24px 30px; margin: 20px 0; border: 1px solid rgba(255,255,255,0.08); font-family: 'Courier New', monospace; font-size: 0.85rem; color: #8892b0; line-height: 1.6; white-space: pre; overflow-x: auto; }
+        .tree .folder { color: #e94560; font-weight: 600; }
+        .tree .file { color: #b0b8c8; }
+        .tree .comment { color: #555; }
+        .footer { text-align: center; padding: 30px; color: #555; font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 40px; }
+        @media print {
+            body { background: #fff; color: #222; }
+            .page-header { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .section { border: 1px solid #ddd; box-shadow: none; background: #fff !important; }
+            .section p, .section li, tbody td { color: #333; }
+            .section h3 { color: #c23152; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <h1>Additional Deliverables</h1>
+    <div class="subtitle">API Documentation, Project Structure, Testing Strategy, Glossary, and Future Work</div>
+    <div class="badge">Section 6 of 6 -- RAG-Powered Customer Support Chatbot</div>
+</div>
+
+<div class="container">
+
+    <!-- SECTION 1: API Documentation -->
+    <div class="section">
+        <h2><span class="section-number">1</span> API Documentation</h2>
+        <p>The backend uses <strong>FastAPI</strong>, which automatically generates interactive API documentation using the <strong>OpenAPI 3.0</strong> specification. No separate API documentation is maintained — the docs are always in sync with the actual codebase.</p>
+
+        <h3>1.1 Built-in Documentation Endpoints</h3>
+        <table>
+            <thead><tr><th>URL</th><th>Interface</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td><code>http://localhost:8000/docs</code></td><td><strong>Swagger UI</strong></td><td>Interactive API explorer with "Try it out" functionality. Lists all endpoints, request/response schemas, and authentication requirements.</td></tr>
+                <tr><td><code>http://localhost:8000/redoc</code></td><td><strong>ReDoc</strong></td><td>Read-only API documentation with a clean, three-panel layout optimised for reading.</td></tr>
+                <tr><td><code>http://localhost:8000/openapi.json</code></td><td><strong>OpenAPI JSON</strong></td><td>Raw OpenAPI 3.0 specification file. Can be imported into Postman, Insomnia, or other API tools.</td></tr>
+            </tbody>
+        </table>
+
+        <h3>1.2 Documentation Features</h3>
+        <ul>
+            <li><strong>Auto-Generated Schemas:</strong> All Pydantic request/response models (ChatRequest, ChatResponse, SourceChunk, etc.) are automatically documented with field types, descriptions, and validation rules.</li>
+            <li><strong>Authentication:</strong> Endpoints requiring JWT authentication are clearly marked with a lock icon in Swagger UI.</li>
+            <li><strong>Tags:</strong> Endpoints are grouped by tag — Chat, Auth, Feedback — for easy navigation.</li>
+            <li><strong>Example Values:</strong> Pydantic models provide example values for all request fields.</li>
+        </ul>
+
+        <div class="highlight-box">
+            <p><strong>Access:</strong> Start the backend server with <code>uvicorn app.main:app --port 8000</code> and navigate to <code>/docs</code> in your browser to explore the full interactive API documentation.</p>
+        </div>
+    </div>
+
+    <!-- SECTION 2: Project Structure -->
+    <div class="section">
+        <h2><span class="section-number">2</span> Project Directory Structure</h2>
+
+        <h3>2.1 Backend Structure</h3>
+        <div class="tree"><span class="folder">Backend/</span>
+├── <span class="folder">app/</span>
+│   ├── <span class="file">main.py</span>              <span class="comment"># FastAPI app entry point, CORS, router includes</span>
+│   ├── <span class="folder">api/</span>
+│   │   ├── <span class="file">chat.py</span>           <span class="comment"># /chat/ask, /chat/voice, /chat/conversations</span>
+│   │   ├── <span class="file">auth.py</span>           <span class="comment"># /auth/login, /auth/register, /auth/google</span>
+│   │   └── <span class="file">feedback.py</span>       <span class="comment"># /feedback endpoints</span>
+│   ├── <span class="folder">nlp/</span>
+│   │   ├── <span class="file">router.py</span>         <span class="comment"># LLMRouter — intent classification</span>
+│   │   ├── <span class="file">generator.py</span>      <span class="comment"># Generator — answer, rewrite, verify, direct</span>
+│   │   ├── <span class="file">retrieval.py</span>      <span class="comment"># Retriever — semantic search</span>
+│   │   ├── <span class="file">embedder.py</span>       <span class="comment"># Embedder — all-MiniLM-L6-v2</span>
+│   │   ├── <span class="file">vector_db.py</span>      <span class="comment"># VectorDB — ChromaDB wrapper</span>
+│   │   ├── <span class="file">transcriber.py</span>    <span class="comment"># Transcriber — Whisper STT</span>
+│   │   └── <span class="file">tts.py</span>            <span class="comment"># TextToSpeech — ElevenLabs</span>
+│   ├── <span class="folder">db/</span>
+│   │   ├── <span class="file">models.py</span>         <span class="comment"># SQLAlchemy ORM models (5 tables)</span>
+│   │   └── <span class="file">session.py</span>        <span class="comment"># Database engine and session factory</span>
+│   ├── <span class="folder">core/</span>
+│   │   ├── <span class="file">security.py</span>       <span class="comment"># JWT creation, password hashing, get_current_user</span>
+│   │   └── <span class="file">rate_limiter.py</span>   <span class="comment"># SlowAPI rate limiter configuration</span>
+│   ├── <span class="folder">models/</span>
+│   │   ├── <span class="file">request.py</span>        <span class="comment"># Pydantic request schemas</span>
+│   │   └── <span class="file">response.py</span>       <span class="comment"># Pydantic response schemas</span>
+│   └── <span class="folder">mlops/</span>
+│       ├── <span class="file">tracker.py</span>        <span class="comment"># MLflow experiment tracking</span>
+│       └── <span class="file">metrics.py</span>        <span class="comment"># Prometheus metric definitions</span>
+├── <span class="folder">data/</span>
+│   └── <span class="folder">vector_db/</span>            <span class="comment"># ChromaDB persistent storage</span>
+├── <span class="file">.env</span>                      <span class="comment"># Environment variables (not in git)</span>
+└── <span class="file">requirements.txt</span>          <span class="comment"># Python dependencies</span></div>
+
+        <h3>2.2 Frontend Structure</h3>
+        <div class="tree"><span class="folder">Frontend/</span>
+├── <span class="folder">app/</span>
+│   ├── <span class="file">layout.tsx</span>            <span class="comment"># Root layout with ThemeProvider</span>
+│   ├── <span class="file">page.tsx</span>              <span class="comment"># Landing page (redirects)</span>
+│   ├── <span class="file">globals.css</span>           <span class="comment"># OKLCH design tokens (light + dark)</span>
+│   ├── <span class="folder">login/</span>
+│   │   └── <span class="file">page.tsx</span>          <span class="comment"># Login form with password toggle</span>
+│   ├── <span class="folder">register/</span>
+│   │   └── <span class="file">page.tsx</span>          <span class="comment"># Registration with OTP verification</span>
+│   ├── <span class="folder">forgot-password/</span>
+│   │   └── <span class="file">page.tsx</span>          <span class="comment"># Password recovery flow</span>
+│   └── <span class="folder">chat/</span>
+│       └── <span class="file">page.tsx</span>          <span class="comment"># Main chat interface</span>
+├── <span class="folder">components/</span>
+│   ├── <span class="folder">chat/</span>                 <span class="comment"># 5 custom chat components</span>
+│   ├── <span class="folder">ui/</span>                   <span class="comment"># 57 shadcn/ui components</span>
+│   ├── <span class="file">theme-provider.tsx</span>    <span class="comment"># next-themes wrapper</span>
+│   └── <span class="file">theme-toggle.tsx</span>      <span class="comment"># Dark/light toggle button</span>
+├── <span class="folder">hooks/</span>                    <span class="comment"># useAuth, useChat, useFeedback</span>
+├── <span class="folder">services/</span>                 <span class="comment"># Axios API client configuration</span>
+├── <span class="folder">types/</span>                    <span class="comment"># TypeScript type definitions</span>
+└── <span class="file">package.json</span>              <span class="comment"># Node.js dependencies</span></div>
+    </div>
+
+    <!-- SECTION 3: Testing Strategy -->
+    <div class="section">
+        <h2><span class="section-number">3</span> Testing Strategy</h2>
+
+        <div class="highlight-box">
+            <p><strong>Current Status:</strong> Unit testing has not been implemented in the current version of the project. The section below outlines the planned testing strategy for future development phases.</p>
+        </div>
+
+        <h3>3.1 Planned Testing Approach</h3>
+        <table>
+            <thead><tr><th>Test Type</th><th>Framework</th><th>Scope</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Unit Tests</strong></td><td>pytest</td><td>Individual functions: Embedder.embed_text(), LLMRouter.classify(), Generator.rewrite_query()</td></tr>
+                <tr><td><strong>Integration Tests</strong></td><td>pytest + httpx</td><td>Full API endpoint testing: POST /chat/ask, POST /auth/login, POST /feedback</td></tr>
+                <tr><td><strong>API Contract Tests</strong></td><td>FastAPI TestClient</td><td>Validate request/response schemas match Pydantic models</td></tr>
+                <tr><td><strong>Database Tests</strong></td><td>pytest + SQLAlchemy</td><td>ORM model CRUD operations with test database</td></tr>
+            </tbody>
+        </table>
+
+        <h3>3.2 Current Validation Methods</h3>
+        <p>While formal unit tests are not yet in place, the following validation mechanisms are actively used:</p>
+        <ul>
+            <li><strong>Pydantic Validation:</strong> All API request bodies are validated at runtime by Pydantic models, rejecting malformed data with clear error messages.</li>
+            <li><strong>FastAPI Swagger UI:</strong> Manual endpoint testing via the interactive <code>/docs</code> interface during development.</li>
+            <li><strong>Structured Logging:</strong> Comprehensive logging throughout the NLP pipeline (router, generator, retriever) to trace request flow and identify issues.</li>
+            <li><strong>Prometheus Metrics:</strong> Real-time tracking of request counts, response times, and retrieval confidence scores.</li>
+            <li><strong>MLflow Tracking:</strong> Experiment logging to compare pipeline performance across different configurations.</li>
+        </ul>
+    </div>
+
+    <!-- SECTION 4: Glossary -->
+    <div class="section">
+        <h2><span class="section-number">4</span> Glossary of Terms</h2>
+        <table>
+            <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+            <tbody>
+                <tr><td><strong>RAG</strong></td><td>Retrieval-Augmented Generation — a technique that combines information retrieval with LLM generation to produce grounded, accurate answers.</td></tr>
+                <tr><td><strong>LLM</strong></td><td>Large Language Model — a deep learning model trained on vast text data to understand and generate natural language (e.g., Llama 3.3 70B).</td></tr>
+                <tr><td><strong>Embedding</strong></td><td>A dense numerical vector representation of text that captures semantic meaning, enabling similarity comparison.</td></tr>
+                <tr><td><strong>Vector Database</strong></td><td>A database optimised for storing and querying high-dimensional vectors (e.g., ChromaDB).</td></tr>
+                <tr><td><strong>Semantic Search</strong></td><td>Search based on meaning rather than keyword matching, using vector similarity to find relevant documents.</td></tr>
+                <tr><td><strong>HNSW</strong></td><td>Hierarchical Navigable Small World — an approximate nearest neighbour algorithm used by ChromaDB for fast vector search.</td></tr>
+                <tr><td><strong>STT</strong></td><td>Speech-to-Text — converting spoken audio into written text (implemented via OpenAI Whisper).</td></tr>
+                <tr><td><strong>TTS</strong></td><td>Text-to-Speech — converting written text into spoken audio (implemented via ElevenLabs API).</td></tr>
+                <tr><td><strong>JWT</strong></td><td>JSON Web Token — a compact token format used for secure authentication between frontend and backend.</td></tr>
+                <tr><td><strong>OAuth 2.0</strong></td><td>An authorisation framework that allows third-party login (Google) without sharing passwords.</td></tr>
+                <tr><td><strong>OTP</strong></td><td>One-Time Password — a temporary code sent via email for user verification during registration.</td></tr>
+                <tr><td><strong>ASGI</strong></td><td>Asynchronous Server Gateway Interface — the Python standard for async web servers (used by Uvicorn/FastAPI).</td></tr>
+                <tr><td><strong>ORM</strong></td><td>Object-Relational Mapping — a technique for interacting with databases using Python objects instead of raw SQL (SQLAlchemy).</td></tr>
+                <tr><td><strong>OKLCH</strong></td><td>A perceptually uniform colour space used in Tailwind CSS v4 for consistent colour contrast across themes.</td></tr>
+                <tr><td><strong>Adaptive RAG</strong></td><td>An enhanced RAG pipeline that uses intent routing, query rewriting, confidence scoring, and answer verification to optimise response quality.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 5: Future Enhancements -->
+    <div class="section">
+        <h2><span class="section-number">5</span> Future Enhancements</h2>
+        <table>
+            <thead><tr><th>Enhancement</th><th>Priority</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Unit Testing Suite</strong></td><td>High</td><td>Implement pytest-based unit and integration tests for all NLP components and API endpoints.</td></tr>
+                <tr><td><strong>Docker Containerisation</strong></td><td>High</td><td>Create Dockerfile and docker-compose.yml for one-command deployment of all services.</td></tr>
+                <tr><td><strong>GPU Acceleration</strong></td><td>Medium</td><td>Add optional CUDA support for faster Whisper transcription on GPU-equipped servers.</td></tr>
+                <tr><td><strong>Knowledge Base Admin</strong></td><td>Medium</td><td>Build an admin interface to upload, edit, and manage QA documents in the ChromaDB collection.</td></tr>
+                <tr><td><strong>Multi-Language Support</strong></td><td>Low</td><td>Extend the system to support Arabic and other languages for broader customer reach.</td></tr>
+                <tr><td><strong>WebSocket Streaming</strong></td><td>Medium</td><td>Stream LLM responses token-by-token for real-time typing effect in the frontend.</td></tr>
+                <tr><td><strong>Advanced Analytics</strong></td><td>Low</td><td>Expand the Streamlit dashboard with user satisfaction trends, peak usage times, and topic clustering.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 6: References -->
+    <div class="section">
+        <h2><span class="section-number">6</span> References</h2>
+        <ul>
+            <li><strong>FastAPI Documentation:</strong> https://fastapi.tiangolo.com</li>
+            <li><strong>Next.js Documentation:</strong> https://nextjs.org/docs</li>
+            <li><strong>ChromaDB Documentation:</strong> https://docs.trychroma.com</li>
+            <li><strong>Sentence Transformers:</strong> https://www.sbert.net</li>
+            <li><strong>OpenAI Whisper:</strong> https://github.com/openai/whisper</li>
+            <li><strong>Groq API:</strong> https://console.groq.com/docs</li>
+            <li><strong>ElevenLabs API:</strong> https://elevenlabs.io/docs/api-reference</li>
+            <li><strong>shadcn/ui Components:</strong> https://ui.shadcn.com</li>
+            <li><strong>Tailwind CSS v4:</strong> https://tailwindcss.com/docs</li>
+            <li><strong>SQLAlchemy 2.0:</strong> https://docs.sqlalchemy.org</li>
+            <li><strong>MLflow:</strong> https://mlflow.org/docs/latest</li>
+            <li><strong>Prometheus Client:</strong> https://prometheus.io/docs</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        RAG-Powered Customer Support Chatbot -- System Analysis and Design -- Section 6 of 6
+    </div>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'dark',
+        themeVariables: {
+            primaryColor: '#e94560',
+            primaryTextColor: '#fff',
+            primaryBorderColor: '#c23152',
+            lineColor: '#8892b0',
+            secondaryColor: '#16213e',
+            tertiaryColor: '#1a1a2e',
+            fontFamily: 'Inter, sans-serif'
+        }
+    });
+</script>
+
+</body>
+</html>

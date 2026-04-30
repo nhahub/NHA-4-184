@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Architecture - RAG Customer Support Chatbot</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f1117;
+            color: #e0e0e0;
+            line-height: 1.7;
+            padding: 0;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            padding: 60px 80px;
+            border-bottom: 3px solid #e94560;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 80% 20%, rgba(233,69,96,0.15) 0%, transparent 50%);
+        }
+
+        .page-header h1 {
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: #ffffff;
+            position: relative;
+            letter-spacing: -0.5px;
+        }
+
+        .page-header .subtitle {
+            font-size: 1.1rem;
+            color: #8892b0;
+            margin-top: 8px;
+            font-weight: 400;
+            position: relative;
+        }
+
+        .page-header .badge {
+            display: inline-block;
+            background: rgba(233,69,96,0.2);
+            color: #e94560;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 16px;
+            border: 1px solid rgba(233,69,96,0.3);
+            position: relative;
+        }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 50px 80px 80px; }
+
+        .section {
+            margin-bottom: 50px;
+            background: linear-gradient(135deg, #161b22 0%, #1a1f2e 100%);
+            border-radius: 16px;
+            padding: 40px;
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .section-number {
+            display: inline-block;
+            background: linear-gradient(135deg, #e94560, #c23152);
+            color: #fff;
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            text-align: center;
+            line-height: 36px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-right: 14px;
+            vertical-align: middle;
+        }
+
+        .section h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section h3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #e94560;
+            margin: 28px 0 14px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(233,69,96,0.2);
+        }
+
+        .section p, .section li {
+            color: #b0b8c8;
+            font-size: 0.95rem;
+            line-height: 1.8;
+        }
+
+        .section ul, .section ol {
+            padding-left: 24px;
+            margin: 12px 0;
+        }
+
+        .section li { margin-bottom: 8px; }
+        .section li strong { color: #e0e0e0; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+
+        thead th {
+            background: linear-gradient(135deg, #e94560, #c23152);
+            color: #fff;
+            padding: 14px 18px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        thead th:first-child { border-radius: 10px 0 0 0; }
+        thead th:last-child { border-radius: 0 10px 0 0; }
+
+        tbody td {
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: #b0b8c8;
+            vertical-align: top;
+        }
+
+        tbody tr:hover { background: rgba(233,69,96,0.05); }
+        tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+
+        .diagram-container {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 24px 0;
+            border: 1px solid rgba(255,255,255,0.08);
+            overflow-x: auto;
+        }
+
+        .diagram-container .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .diagram-label {
+            text-align: center;
+            color: #8892b0;
+            font-size: 0.85rem;
+            font-style: italic;
+            margin-top: 12px;
+        }
+
+        .highlight-box {
+            background: rgba(233,69,96,0.08);
+            border-left: 4px solid #e94560;
+            padding: 18px 24px;
+            border-radius: 0 10px 10px 0;
+            margin: 20px 0;
+        }
+
+        .highlight-box p { color: #c8cede; font-size: 0.92rem; }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .tech-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .tech-card:hover {
+            border-color: rgba(233,69,96,0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(233,69,96,0.1);
+        }
+
+        .tech-card .label {
+            font-size: 0.75rem;
+            color: #e94560;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .tech-card .value {
+            font-size: 1rem;
+            color: #ffffff;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #555;
+            font-size: 0.8rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            margin-top: 40px;
+        }
+
+        @media print {
+            body { background: #fff; color: #222; }
+            .page-header { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .section { border: 1px solid #ddd; box-shadow: none; background: #fff !important; }
+            .section p, .section li, tbody td { color: #333; }
+            .section h3 { color: #c23152; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <h1>System Analysis and Design</h1>
+    <div class="subtitle">Problem Statement, Objectives, and Software Architecture</div>
+    <div class="badge">Section 1 of 6 -- RAG-Powered Customer Support Chatbot</div>
+</div>
+
+<div class="container">
+
+    <!-- SECTION 1: Problem Statement -->
+    <div class="section">
+        <h2><span class="section-number">1</span> Problem Statement</h2>
+
+        <p>Modern e-commerce platforms face significant challenges in delivering efficient, accurate, and timely customer support at scale. Traditional customer service models rely heavily on human agents to handle a large volume of repetitive queries, leading to operational bottlenecks and inconsistent user experiences.</p>
+
+        <h3>1.1 Core Problem</h3>
+        <p>Customer support systems in the e-commerce domain are unable to provide real-time, accurate, and contextually relevant responses to user inquiries without heavy reliance on manual intervention. This results in:</p>
+        <ul>
+            <li><strong>Delayed response times</strong> causing customer dissatisfaction and reduced loyalty.</li>
+            <li><strong>Inconsistent answer quality</strong> across different support agents and shifts.</li>
+            <li><strong>High operational costs</strong> due to reliance on large human support teams.</li>
+            <li><strong>Inability to scale</strong> during peak traffic periods without proportional cost increases.</li>
+            <li><strong>Loss of contextual awareness</strong> when customers reference previous messages in a conversation.</li>
+        </ul>
+
+        <h3>1.2 Proposed Solution</h3>
+        <p>This project addresses these challenges through the development of a <strong>RAG-Powered Customer Support Chatbot</strong> that combines semantic search with Large Language Model (LLM) inference, enabling intelligent, context-aware, and domain-specific automated responses.</p>
+
+        <div class="highlight-box">
+            <p>The system leverages Retrieval-Augmented Generation (RAG) with an Adaptive Pipeline that intelligently routes queries based on intent classification and confidence scoring, ensuring optimal response quality while minimising unnecessary computation.</p>
+        </div>
+    </div>
+
+    <!-- SECTION 2: Objectives -->
+    <div class="section">
+        <h2><span class="section-number">2</span> Project Objectives</h2>
+
+        <table>
+            <thead>
+                <tr><th>ID</th><th>Objective</th><th>Category</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>OBJ-1</td><td>Build an intelligent chatbot that retrieves contextually relevant answers from a domain-specific knowledge base using semantic search over a vector database (ChromaDB).</td><td>Core Functionality</td></tr>
+                <tr><td>OBJ-2</td><td>Implement an Adaptive RAG pipeline with LLM-based intent routing to classify queries as casual or support, optimising response paths.</td><td>Intelligence</td></tr>
+                <tr><td>OBJ-3</td><td>Integrate confidence-based answer verification to detect and prevent hallucinated or low-quality responses.</td><td>Quality Assurance</td></tr>
+                <tr><td>OBJ-4</td><td>Support multi-turn conversations with history tracking and automatic query rewriting for vague follow-up questions.</td><td>User Experience</td></tr>
+                <tr><td>OBJ-5</td><td>Provide full-duplex voice interaction through Speech-to-Text (Whisper) and Text-to-Speech (ElevenLabs) integration.</td><td>Accessibility</td></tr>
+                <tr><td>OBJ-6</td><td>Secure user access through Google OAuth 2.0 authentication with JWT-based session management.</td><td>Security</td></tr>
+                <tr><td>OBJ-7</td><td>Implement comprehensive monitoring using Prometheus (real-time metrics), MLflow (experiment tracking), and Streamlit (analytics dashboard).</td><td>MLOps</td></tr>
+                <tr><td>OBJ-8</td><td>Protect system resources through API rate limiting on critical endpoints.</td><td>Security</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 3: Use Case Diagram -->
+    <div class="section">
+        <h2><span class="section-number">3</span> Use Case Diagram</h2>
+
+        <div class="diagram-container">
+            <pre class="mermaid">
+graph LR
+    subgraph Actors
+        C["Customer<br/>(End User)"]
+        A["System<br/>Administrator"]
+        G["Google OAuth<br/>(External)"]
+    end
+
+    subgraph UC["System Use Cases"]
+        UC1["UC-1: Submit Text Query"]
+        UC2["UC-2: Submit Voice Query"]
+        UC3["UC-3: Authenticate via Google"]
+        UC4["UC-4: Provide Feedback"]
+        UC5["UC-5: View Conversation History"]
+        UC6["UC-6: Monitor System Performance"]
+        UC7["UC-7: Evaluate Model Accuracy"]
+        UC8["UC-8: Review User Feedback"]
+    end
+
+    C --> UC1
+    C --> UC2
+    C --> UC3
+    C --> UC4
+    C --> UC5
+    A --> UC6
+    A --> UC7
+    A --> UC8
+    UC3 --> G
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 1: Use Case Diagram -- System Actors and Interactions</div>
+
+        <h3>3.1 Use Case Descriptions</h3>
+
+        <table>
+            <thead>
+                <tr><th>Use Case</th><th>Actor</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>UC-1: Submit Text Query</strong></td><td>Customer</td><td>The user submits a natural language question through the chat interface. The Adaptive RAG pipeline classifies the intent, retrieves relevant context if needed, generates an answer, and applies confidence-based verification before returning the response.</td></tr>
+                <tr><td><strong>UC-2: Submit Voice Query</strong></td><td>Customer</td><td>The user submits an audio recording. The system transcribes it using Whisper (STT), processes it through the same Adaptive RAG pipeline, generates a text answer, converts it to speech using ElevenLabs (TTS), and returns both text and audio responses.</td></tr>
+                <tr><td><strong>UC-3: Authenticate via Google</strong></td><td>Customer, Google</td><td>The user initiates login through Google OAuth 2.0. Upon successful authentication, the system creates or retrieves the user account and issues a JWT token for subsequent API requests.</td></tr>
+                <tr><td><strong>UC-4: Provide Feedback</strong></td><td>Customer</td><td>The user submits positive (thumbs up) or negative (thumbs down) feedback on a chatbot response. Feedback is persisted in the database and logged to MLflow and Prometheus for quality tracking.</td></tr>
+                <tr><td><strong>UC-5: View History</strong></td><td>Customer</td><td>The user retrieves their past conversations and individual messages, enabling continuity across sessions.</td></tr>
+                <tr><td><strong>UC-6: Monitor Performance</strong></td><td>Administrator</td><td>The administrator accesses the Streamlit dashboard to view real-time KPIs including response time, request throughput, retrieval confidence distribution, and error rates sourced from Prometheus.</td></tr>
+                <tr><td><strong>UC-7: Evaluate Model</strong></td><td>Administrator</td><td>The administrator reviews MLflow experiment logs to analyse model performance, compare configurations, and identify areas for accuracy improvement.</td></tr>
+                <tr><td><strong>UC-8: Review Feedback</strong></td><td>Administrator</td><td>The administrator reviews aggregated user feedback data through the dashboard to assess overall system quality and user satisfaction.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 4: Software Architecture -->
+    <div class="section">
+        <h2><span class="section-number">4</span> Software Architecture</h2>
+
+        <h3>4.1 Architecture Style</h3>
+        <p>The system follows a <strong>Layered Architecture</strong> pattern with clear separation of concerns across five distinct layers. Each layer communicates only with its adjacent layers, ensuring modularity, maintainability, and independent scalability.</p>
+
+        <h3>4.2 Technology Stack</h3>
+        <div class="tech-grid">
+            <div class="tech-card">
+                <div class="label">Frontend</div>
+                <div class="value">Next.js</div>
+            </div>
+            <div class="tech-card">
+                <div class="label">Backend API</div>
+                <div class="value">FastAPI</div>
+            </div>
+            <div class="tech-card">
+                <div class="label">LLM Provider</div>
+                <div class="value">Groq (Llama)</div>
+            </div>
+            <div class="tech-card">
+                <div class="label">Vector Database</div>
+                <div class="value">ChromaDB</div>
+            </div>
+            <div class="tech-card">
+                <div class="label">Embeddings</div>
+                <div class="value">all-MiniLM-L6-v2</div>
+            </div>
+            <div class="tech-card">
+                <div class="label">Relational DB</div>
+                <div class="value">PostgreSQL</div>
+            </div>
+            <div class="tech-card">
+                <div class="label">STT Engine</div>
+                <div class="value">OpenAI Whisper</div>
+            </div>
+            <div class="tech-card">
+                <div class="label">TTS Engine</div>
+                <div class="value">ElevenLabs API</div>
+            </div>
+            <div class="tech-card">
+                <div class="label">Authentication</div>
+                <div class="value">Google OAuth 2.0</div>
+            </div>
+            <div class="tech-card">
+                <div class="label">Metrics</div>
+                <div class="value">Prometheus</div>
+            </div>
+            <div class="tech-card">
+                <div class="label">Experiment Tracking</div>
+                <div class="value">MLflow</div>
+            </div>
+            <div class="tech-card">
+                <div class="label">Dashboard</div>
+                <div class="value">Streamlit</div>
+            </div>
+        </div>
+
+        <h3>4.3 High-Level Architecture Diagram</h3>
+        <div class="diagram-container">
+            <pre class="mermaid">
+graph TD
+    FE["Next.js Frontend\n(Chat UI / Voice UI)"]
+
+    FE --> AUTH["/auth\nGoogle OAuth 2.0"]
+    FE --> CHAT["/chat/ask\nText Endpoint"]
+    FE --> VOICE["/chat/voice\nVoice Endpoint"]
+    FE --> FB["/feedback\nFeedback Endpoint"]
+
+    subgraph API["API Layer - FastAPI + SlowAPI Rate Limiter"]
+        AUTH
+        CHAT
+        VOICE
+        FB
+    end
+
+    VOICE --> STT["Transcriber\n(OpenAI Whisper)"]
+    STT --> ROUTER
+    CHAT --> ROUTER["LLM Router\n(Intent Classifier)"]
+
+    ROUTER -->|Casual| GEN["Generator\n(Groq / Llama LLM)"]
+    ROUTER -->|Support| RET["Retriever\n(Semantic Search)"]
+
+    RET --> EMB["Embedder\n(all-MiniLM-L6-v2)"]
+    EMB --> VDB[("ChromaDB\nVector Database")]
+    RET --> GEN
+
+    GEN --> TTS["Text-to-Speech\n(ElevenLabs)"]
+
+    subgraph NLP["Business Logic Layer - NLP Pipeline"]
+        STT
+        ROUTER
+        GEN
+        RET
+        EMB
+        TTS
+    end
+
+    AUTH --> PG
+    CHAT --> PG
+    VOICE --> PG
+    FB --> PG
+
+    PG[("PostgreSQL\nUsers / Conversations\nMessages / Feedback")]
+    VDB
+
+    subgraph DATA["Data Layer"]
+        PG
+        VDB
+    end
+
+    CHAT --> PROM["Prometheus\n(Real-time Metrics)"]
+    CHAT --> MLF["MLflow\n(Experiment Tracking)"]
+    STR["Streamlit Dashboard"] --> PROM
+    STR --> MLF
+
+    subgraph MON["Monitoring Layer"]
+        PROM
+        MLF
+        STR
+    end
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 2: High-Level System Architecture Diagram</div>
+
+        <h3>4.4 Layer Descriptions</h3>
+        <table>
+            <thead>
+                <tr><th>Layer</th><th>Responsibility</th><th>Components</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Presentation</strong></td><td>User interface for text chat and voice interaction. Handles user input, displays responses, and plays audio output.</td><td>Next.js, React Components</td></tr>
+                <tr><td><strong>API</strong></td><td>RESTful API gateway that handles authentication, request validation, rate limiting, and routing to business logic.</td><td>FastAPI, SlowAPI, JWT Auth</td></tr>
+                <tr><td><strong>Business Logic</strong></td><td>Core NLP processing including intent classification, semantic retrieval, answer generation, verification, STT, and TTS.</td><td>LLM Router, Generator, Retriever, Embedder, Transcriber, TTS</td></tr>
+                <tr><td><strong>Data</strong></td><td>Persistent storage for structured data (users, conversations) and vector embeddings (knowledge base).</td><td>PostgreSQL, ChromaDB</td></tr>
+                <tr><td><strong>Monitoring</strong></td><td>System observability through real-time metrics collection, experiment tracking, and visual analytics.</td><td>Prometheus, MLflow, Streamlit</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 5: Adaptive RAG Pipeline -->
+    <div class="section">
+        <h2><span class="section-number">5</span> Adaptive RAG Pipeline</h2>
+
+        <p>The core innovation of this system is the <strong>Adaptive RAG Pipeline</strong>, which intelligently routes queries through different processing paths based on intent classification and retrieval confidence scoring.</p>
+
+        <h3>5.1 Pipeline Flow</h3>
+        <div class="diagram-container">
+            <pre class="mermaid">
+flowchart TD
+    A["User Query<br/>(Text or Voice)"] --> B{"LLM Router<br/>Intent Classification"}
+
+    B -->|"Intent: Casual<br/>(Greeting, Thanks)"| C["Direct LLM Response<br/>(Skip Retrieval)"]
+    B -->|"Intent: Support<br/>(Product Question)"| D["Query Rewriting<br/>(If conversation history exists)"]
+
+    D --> E["Semantic Search<br/>(ChromaDB + all-MiniLM-L6-v2)"]
+    E --> F["LLM Answer Generation<br/>(Groq / Llama)"]
+    F --> G{"Confidence<br/>Scoring"}
+
+    G -->|"HIGH >= 0.5"| H["Return Answer<br/>(High Confidence Path)"]
+    G -->|"MEDIUM 0.2 - 0.5"| I["Return Answer<br/>(Medium Confidence Path)"]
+    G -->|"LOW < 0.2"| J{"Answer Verification<br/>(LLM Cross-Check)"}
+
+    J -->|"Verified = True"| K["Return Answer<br/>(Low Confidence Verified)"]
+    J -->|"Verified = False"| L["Return Fallback<br/>(Low Confidence Rejected)"]
+
+    C --> M["Save to Database<br/>+ Log to MLflow<br/>+ Prometheus Metrics"]
+    H --> M
+    I --> M
+    K --> M
+    L --> M
+
+    style B fill:#e94560,stroke:#c23152,color:#fff
+    style G fill:#e94560,stroke:#c23152,color:#fff
+    style J fill:#f0a500,stroke:#cf8d00,color:#000
+    style L fill:#dc3545,stroke:#b02a37,color:#fff
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 3: Adaptive RAG Pipeline Flow</div>
+
+        <h3>5.2 Pipeline Paths</h3>
+        <table>
+            <thead>
+                <tr><th>Path</th><th>Condition</th><th>Behaviour</th><th>Example</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Casual</strong></td><td>Router classifies intent as casual</td><td>Skips retrieval entirely; LLM generates a direct conversational response.</td><td>"Hello, how are you?"</td></tr>
+                <tr><td><strong>High Confidence</strong></td><td>Retrieval confidence >= 0.5</td><td>Returns the generated answer directly without additional verification.</td><td>"Can you resend the verification link?"</td></tr>
+                <tr><td><strong>Medium Confidence</strong></td><td>Confidence between 0.2 and 0.5</td><td>Returns the generated answer; confidence is logged for monitoring.</td><td>"How do I return a product?"</td></tr>
+                <tr><td><strong>Low Confidence (Verified)</strong></td><td>Confidence < 0.2, verification passes</td><td>A secondary LLM check confirms the answer is supported by the retrieved context.</td><td>Edge-case domain questions</td></tr>
+                <tr><td><strong>Low Confidence (Rejected)</strong></td><td>Confidence < 0.2, verification fails</td><td>The system returns a safe fallback message instead of a potentially hallucinated answer.</td><td>"Do you accept Bitcoin payments?"</td></tr>
+            </tbody>
+        </table>
+
+        <h3>5.3 Key Design Decisions</h3>
+        <ul>
+            <li><strong>Query Rewriting:</strong> When conversation history exists, the system rewrites vague follow-up queries (e.g., "What about that?") into standalone questions before retrieval, improving search accuracy.</li>
+            <li><strong>Confidence Formula:</strong> <code>confidence = 1 - L2_distance</code>, where L2 distance is the Euclidean distance between the query embedding and the closest stored chunk in ChromaDB.</li>
+            <li><strong>Conversation History:</strong> The system loads the last 6 messages from the active conversation to provide contextual awareness across interactions.</li>
+            <li><strong>Rate Limiting:</strong> Critical endpoints are protected with SlowAPI: 10 requests/minute on <code>/chat/ask</code>, 5 requests/minute on <code>/chat/voice</code>.</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        RAG-Powered Customer Support Chatbot -- System Analysis and Design -- Section 1 of 6
+    </div>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'dark',
+        themeVariables: {
+            primaryColor: '#e94560',
+            primaryTextColor: '#fff',
+            primaryBorderColor: '#c23152',
+            lineColor: '#8892b0',
+            secondaryColor: '#16213e',
+            tertiaryColor: '#1a1a2e',
+            fontFamily: 'Inter, sans-serif'
+        },
+        flowchart: { curve: 'basis', useMaxWidth: true }
+    });
+</script>
+
+</body>
+</html>

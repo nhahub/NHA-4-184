@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI/UX Design - RAG Customer Support Chatbot</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0f1117; color: #e0e0e0; line-height: 1.7; }
+        .page-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            padding: 60px 80px; border-bottom: 3px solid #e94560; position: relative; overflow: hidden;
+        }
+        .page-header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 80% 20%, rgba(233,69,96,0.15) 0%, transparent 50%); }
+        .page-header h1 { font-size: 2.4rem; font-weight: 800; color: #fff; position: relative; letter-spacing: -0.5px; }
+        .page-header .subtitle { font-size: 1.1rem; color: #8892b0; margin-top: 8px; font-weight: 400; position: relative; }
+        .page-header .badge { display: inline-block; background: rgba(233,69,96,0.2); color: #e94560; padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-top: 16px; border: 1px solid rgba(233,69,96,0.3); position: relative; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 50px 80px 80px; }
+        .section { margin-bottom: 50px; background: linear-gradient(135deg, #161b22 0%, #1a1f2e 100%); border-radius: 16px; padding: 40px; border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .section-number { display: inline-block; background: linear-gradient(135deg, #e94560, #c23152); color: #fff; width: 36px; height: 36px; border-radius: 10px; text-align: center; line-height: 36px; font-weight: 700; font-size: 0.95rem; margin-right: 14px; vertical-align: middle; }
+        .section h2 { font-size: 1.6rem; font-weight: 700; color: #fff; margin-bottom: 24px; display: flex; align-items: center; }
+        .section h3 { font-size: 1.15rem; font-weight: 600; color: #e94560; margin: 28px 0 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(233,69,96,0.2); }
+        .section h4 { font-size: 1rem; font-weight: 600; color: #c8cede; margin: 20px 0 10px; }
+        .section p, .section li { color: #b0b8c8; font-size: 0.95rem; line-height: 1.8; }
+        .section ul { padding-left: 24px; margin: 12px 0; }
+        .section li { margin-bottom: 8px; }
+        .section li strong { color: #e0e0e0; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9rem; }
+        thead th { background: linear-gradient(135deg, #e94560, #c23152); color: #fff; padding: 14px 18px; text-align: left; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        thead th:first-child { border-radius: 10px 0 0 0; }
+        thead th:last-child { border-radius: 0 10px 0 0; }
+        tbody td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #b0b8c8; vertical-align: top; }
+        tbody tr:hover { background: rgba(233,69,96,0.05); }
+        tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+        .diagram-container { background: #0d1117; border-radius: 12px; padding: 30px; margin: 24px 0; border: 1px solid rgba(255,255,255,0.08); overflow-x: auto; }
+        .diagram-container .mermaid { display: flex; justify-content: center; }
+        .diagram-label { text-align: center; color: #8892b0; font-size: 0.85rem; font-style: italic; margin-top: 12px; }
+        .highlight-box { background: rgba(233,69,96,0.08); border-left: 4px solid #e94560; padding: 18px 24px; border-radius: 0 10px 10px 0; margin: 20px 0; }
+        .highlight-box p { color: #c8cede; font-size: 0.92rem; }
+        code { background: rgba(233,69,96,0.15); color: #e94560; padding: 2px 8px; border-radius: 4px; font-size: 0.88rem; font-family: 'Courier New', monospace; }
+        .color-swatch { display: inline-block; width: 28px; height: 28px; border-radius: 6px; vertical-align: middle; margin-right: 10px; border: 1px solid rgba(255,255,255,0.2); }
+        .footer { text-align: center; padding: 30px; color: #555; font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 40px; }
+        @media print {
+            body { background: #fff; color: #222; }
+            .page-header { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .section { border: 1px solid #ddd; box-shadow: none; background: #fff !important; }
+            .section p, .section li, tbody td { color: #333; }
+            .section h3 { color: #c23152; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <h1>UI/UX Design and Prototyping</h1>
+    <div class="subtitle">Wireframes, Component Architecture, Design System, and Accessibility Guidelines</div>
+    <div class="badge">Section 4 of 6 -- RAG-Powered Customer Support Chatbot</div>
+</div>
+
+<div class="container">
+
+    <!-- SECTION 1: Overview -->
+    <div class="section">
+        <h2><span class="section-number">1</span> Design Overview</h2>
+        <p>The frontend is built using <strong>Next.js 16</strong> with <strong>React 19</strong> and <strong>TypeScript</strong>. The UI component library is <strong>shadcn/ui</strong> (built on Radix UI primitives) with <strong>Tailwind CSS v4</strong> for styling. The design follows a modern, minimal chat interface inspired by ChatGPT, with full dark/light theme support.</p>
+
+        <div class="highlight-box">
+            <p><strong>Design Philosophy:</strong> Clean, distraction-free interface that puts the conversation at the centre. The UI prioritises readability, accessibility, and a seamless conversational experience across desktop and mobile devices.</p>
+        </div>
+
+        <h3>1.1 Technology Stack (Frontend)</h3>
+        <table>
+            <thead><tr><th>Technology</th><th>Version</th><th>Purpose</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Next.js</strong></td><td>16.2</td><td>React framework with App Router, SSR, and file-based routing</td></tr>
+                <tr><td><strong>React</strong></td><td>19.2</td><td>UI component rendering and state management</td></tr>
+                <tr><td><strong>TypeScript</strong></td><td>5.7</td><td>Type safety and developer experience</td></tr>
+                <tr><td><strong>Tailwind CSS</strong></td><td>4.2</td><td>Utility-first CSS with OKLCH colour system</td></tr>
+                <tr><td><strong>shadcn/ui</strong></td><td>Latest</td><td>Accessible UI component library (Radix UI + Tailwind)</td></tr>
+                <tr><td><strong>Lucide React</strong></td><td>0.564</td><td>Icon library (Package, Send, Mic, Eye, etc.)</td></tr>
+                <tr><td><strong>Axios</strong></td><td>1.15</td><td>HTTP client for API communication</td></tr>
+                <tr><td><strong>next-themes</strong></td><td>0.4</td><td>Dark/Light theme management</td></tr>
+                <tr><td><strong>Recharts</strong></td><td>2.15</td><td>Data visualisation charts</td></tr>
+                <tr><td><strong>React Hook Form + Zod</strong></td><td>7.54 / 3.24</td><td>Form validation and schema validation</td></tr>
+                <tr><td><strong>Geist Font</strong></td><td>--</td><td>Primary typeface (Sans + Mono variants)</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 2: Screen Inventory -->
+    <div class="section">
+        <h2><span class="section-number">2</span> Screen Inventory and Navigation</h2>
+
+        <h3>2.1 Application Routes</h3>
+        <div class="diagram-container">
+            <pre class="mermaid">
+graph TD
+    ROOT["/"] --> LOGIN["/login\nLogin Page"]
+    ROOT --> REG["/register\nRegistration Page"]
+    ROOT --> FORGOT["/forgot-password\nPassword Recovery"]
+    ROOT --> CHAT["/chat\nMain Chat Interface"]
+
+    LOGIN -->|"Success"| CHAT
+    REG -->|"Success"| LOGIN
+    FORGOT -->|"Reset"| LOGIN
+
+    style CHAT fill:#e94560,stroke:#c23152,color:#fff
+    style LOGIN fill:#16213e,stroke:#0f3460,color:#fff
+    style REG fill:#16213e,stroke:#0f3460,color:#fff
+    style FORGOT fill:#16213e,stroke:#0f3460,color:#fff
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 1: Application Navigation Flow</div>
+
+        <h3>2.2 Screen Descriptions</h3>
+        <table>
+            <thead><tr><th>Screen</th><th>Route</th><th>Key Elements</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Login</strong></td><td>/login</td><td>BrownBox logo, username/password fields, show/hide password toggle, "Forgot Password" link, "Register" link, theme toggle</td></tr>
+                <tr><td><strong>Register</strong></td><td>/register</td><td>Registration form with validation, OTP verification, link to login</td></tr>
+                <tr><td><strong>Forgot Password</strong></td><td>/forgot-password</td><td>Email input, OTP verification step, password reset form</td></tr>
+                <tr><td><strong>Chat (Main)</strong></td><td>/chat</td><td>Left sidebar (conversation history), main chat area, message bubbles, text input with mic button, typing indicator, empty state with suggestions, feedback buttons (thumbs up/down)</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 3: Wireframes -->
+    <div class="section">
+        <h2><span class="section-number">3</span> Wireframes</h2>
+
+        <h3>3.1 Login Page Wireframe</h3>
+        <div class="diagram-container">
+            <pre class="mermaid">
+graph TD
+    subgraph LoginPage["Login Page Layout"]
+        HEADER["Header: BrownBox Logo | Theme Toggle"]
+        CARD["Card Container (max-w-md, centred)"]
+        LOGO["BrownBox Icon (56x56, rounded-xl)"]
+        TITLE["Welcome back"]
+        SUBTITLE["Sign in to BrownBox Support"]
+        ERR["Error Banner (conditional, red)"]
+        USERNAME["Input: Username"]
+        PASSWORD["Input: Password + Eye Toggle"]
+        FORGOT["Link: Forgot password?"]
+        BTN["Button: Sign in (full width)"]
+        REG["Link: Don't have an account? Register"]
+    end
+
+    HEADER --> CARD
+    CARD --> LOGO --> TITLE --> SUBTITLE
+    SUBTITLE --> ERR --> USERNAME --> PASSWORD --> FORGOT --> BTN --> REG
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 2: Login Page Wireframe Structure</div>
+
+        <h3>3.2 Chat Page Wireframe</h3>
+        <div class="diagram-container">
+            <pre class="mermaid">
+graph LR
+    subgraph Sidebar["Left Sidebar (hidden on mobile)"]
+        S1["Search Bar"]
+        S2["+ New Chat Button"]
+        S3["Conversation List\n(title + timestamp)"]
+        S4["User Profile\n(avatar + name + logout)"]
+    end
+
+    subgraph MainArea["Main Chat Area"]
+        M1["Header: BrownBox AI Logo"]
+        M2["Message Area (scrollable)\n- User messages (right aligned)\n- Bot messages (left aligned)\n- Feedback buttons per message\n- Typing indicator"]
+        M3["Empty State (when no messages)\n- Welcome message\n- 4 suggestion cards"]
+        M4["Input Bar\n- Textarea (auto-resize)\n- Mic button (voice)\n- Send button"]
+        M5["Disclaimer text"]
+    end
+
+    Sidebar --- MainArea
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 3: Chat Page Wireframe -- Two-Panel Layout</div>
+    </div>
+
+    <!-- SECTION 4: Component Architecture -->
+    <div class="section">
+        <h2><span class="section-number">4</span> Component Architecture</h2>
+
+        <h3>4.1 Custom Chat Components</h3>
+        <table>
+            <thead><tr><th>Component</th><th>File</th><th>Responsibility</th></tr></thead>
+            <tbody>
+                <tr><td><strong>ChatSidebar</strong></td><td>chat-sidebar.tsx</td><td>Displays conversation history list, new chat button, user profile section with logout. Highlights the active conversation.</td></tr>
+                <tr><td><strong>ChatMessage</strong></td><td>chat-message.tsx</td><td>Renders a single message bubble with role-based alignment (user right, assistant left). Includes feedback buttons (thumbs up/down) on assistant messages.</td></tr>
+                <tr><td><strong>ChatInput</strong></td><td>chat-input.tsx</td><td>Auto-resizing textarea with send button and voice recording button. Shows recording state with red pulsing animation. Supports Enter to send, Shift+Enter for newline.</td></tr>
+                <tr><td><strong>TypingIndicator</strong></td><td>typing-indicator.tsx</td><td>Animated three-dot indicator displayed while the AI is generating a response.</td></tr>
+                <tr><td><strong>EmptyState</strong></td><td>empty-state.tsx</td><td>Welcome screen shown when no messages exist. Displays greeting and 4 clickable suggestion cards to help users start a conversation.</td></tr>
+            </tbody>
+        </table>
+
+        <h3>4.2 Custom Hooks</h3>
+        <table>
+            <thead><tr><th>Hook</th><th>Purpose</th></tr></thead>
+            <tbody>
+                <tr><td><strong>useAuth</strong></td><td>Manages authentication state: login, logout, token storage, user profile retrieval via /auth/me</td></tr>
+                <tr><td><strong>useChat</strong></td><td>Manages chat state: messages, conversations, send message, voice recording (start/stop), load history, new chat</td></tr>
+                <tr><td><strong>useFeedback</strong></td><td>Handles feedback submission (thumbs up/down) for individual messages</td></tr>
+            </tbody>
+        </table>
+
+        <h3>4.3 shadcn/ui Component Library (57 Components)</h3>
+        <p>The project uses a comprehensive set of 57 pre-built, accessible UI components from shadcn/ui, including:</p>
+        <ul>
+            <li><strong>Layout:</strong> Card, Sidebar, Separator, Scroll Area, Resizable Panels</li>
+            <li><strong>Forms:</strong> Input, Textarea, Button, Checkbox, Radio Group, Select, Switch, Slider</li>
+            <li><strong>Feedback:</strong> Toast, Sonner, Alert, Alert Dialog, Progress, Skeleton, Spinner</li>
+            <li><strong>Navigation:</strong> Tabs, Accordion, Navigation Menu, Breadcrumb, Pagination</li>
+            <li><strong>Overlays:</strong> Dialog, Drawer, Sheet, Popover, Tooltip, Hover Card, Dropdown Menu</li>
+            <li><strong>Data Display:</strong> Table, Badge, Avatar, Chart</li>
+        </ul>
+    </div>
+
+    <!-- SECTION 5: Design System -->
+    <div class="section">
+        <h2><span class="section-number">5</span> Design System</h2>
+
+        <h3>5.1 Colour Palette</h3>
+        <p>The design uses the OKLCH colour space for perceptually uniform colours with full dark/light theme support.</p>
+
+        <h4>Light Theme</h4>
+        <table>
+            <thead><tr><th>Token</th><th>Value (OKLCH)</th><th>Usage</th></tr></thead>
+            <tbody>
+                <tr><td><span class="color-swatch" style="background: oklch(0.98 0.005 265);"></span><strong>Background</strong></td><td>oklch(0.98 0.005 265)</td><td>Page background</td></tr>
+                <tr><td><span class="color-swatch" style="background: oklch(0.15 0.02 265);"></span><strong>Foreground</strong></td><td>oklch(0.15 0.02 265)</td><td>Primary text colour</td></tr>
+                <tr><td><span class="color-swatch" style="background: oklch(0.55 0.22 265);"></span><strong>Primary</strong></td><td>oklch(0.55 0.22 265)</td><td>Buttons, links, active states</td></tr>
+                <tr><td><span class="color-swatch" style="background: oklch(0.95 0.01 265);"></span><strong>Secondary</strong></td><td>oklch(0.95 0.01 265)</td><td>Secondary backgrounds</td></tr>
+                <tr><td><span class="color-swatch" style="background: oklch(0.5 0.02 265);"></span><strong>Muted</strong></td><td>oklch(0.5 0.02 265)</td><td>Placeholder text, subtle labels</td></tr>
+                <tr><td><span class="color-swatch" style="background: oklch(0.577 0.245 27.325);"></span><strong>Destructive</strong></td><td>oklch(0.577 0.245 27.325)</td><td>Error states, destructive actions</td></tr>
+            </tbody>
+        </table>
+
+        <h4>Dark Theme</h4>
+        <table>
+            <thead><tr><th>Token</th><th>Value (OKLCH)</th><th>Usage</th></tr></thead>
+            <tbody>
+                <tr><td><span class="color-swatch" style="background: oklch(0.13 0.02 265);"></span><strong>Background</strong></td><td>oklch(0.13 0.02 265)</td><td>Page background</td></tr>
+                <tr><td><span class="color-swatch" style="background: oklch(0.95 0.01 265);"></span><strong>Foreground</strong></td><td>oklch(0.95 0.01 265)</td><td>Primary text colour</td></tr>
+                <tr><td><span class="color-swatch" style="background: oklch(0.65 0.22 265);"></span><strong>Primary</strong></td><td>oklch(0.65 0.22 265)</td><td>Buttons, links, active states</td></tr>
+                <tr><td><span class="color-swatch" style="background: oklch(0.22 0.02 265);"></span><strong>Secondary</strong></td><td>oklch(0.22 0.02 265)</td><td>Secondary backgrounds</td></tr>
+                <tr><td><span class="color-swatch" style="background: oklch(0.17 0.02 265);"></span><strong>Card</strong></td><td>oklch(0.17 0.02 265)</td><td>Card and popover backgrounds</td></tr>
+            </tbody>
+        </table>
+
+        <h3>5.2 Typography</h3>
+        <table>
+            <thead><tr><th>Property</th><th>Value</th><th>Usage</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Primary Font</strong></td><td>Geist (Google Fonts)</td><td>All body text, headings, and UI elements</td></tr>
+                <tr><td><strong>Monospace Font</strong></td><td>Geist Mono</td><td>Code snippets, technical values</td></tr>
+                <tr><td><strong>Base Size</strong></td><td>14px (text-sm in Tailwind)</td><td>Default text in chat messages and forms</td></tr>
+                <tr><td><strong>Heading (Page)</strong></td><td>24px / bold</td><td>Login page title ("Welcome back")</td></tr>
+                <tr><td><strong>Heading (Section)</strong></td><td>18px / semibold</td><td>Sidebar brand name ("BrownBox")</td></tr>
+            </tbody>
+        </table>
+
+        <h3>5.3 Spacing and Sizing</h3>
+        <table>
+            <thead><tr><th>Token</th><th>Value</th><th>Usage</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Border Radius (base)</strong></td><td>0.625rem (10px)</td><td>Cards, buttons, inputs</td></tr>
+                <tr><td><strong>Border Radius (lg)</strong></td><td>0.625rem</td><td>Dialogs, popovers</td></tr>
+                <tr><td><strong>Border Radius (xl)</strong></td><td>calc(0.625rem + 4px)</td><td>Chat input container (rounded-xl)</td></tr>
+                <tr><td><strong>Button Height</strong></td><td>36px (h-9) / 44px (h-11)</td><td>Icon buttons / Full-width submit buttons</td></tr>
+                <tr><td><strong>Input Max Height</strong></td><td>150px</td><td>Auto-resizing textarea cap</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 6: Key UI Interactions -->
+    <div class="section">
+        <h2><span class="section-number">6</span> Key UI Interactions</h2>
+
+        <table>
+            <thead><tr><th>Interaction</th><th>Behaviour</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Send Message</strong></td><td>User types in textarea and presses Enter (or clicks Send). Message appears instantly on the right side. Bot response appears on the left after loading.</td></tr>
+                <tr><td><strong>Voice Recording</strong></td><td>User clicks the mic button. The input border turns red with a pulsing animation. A "Recording..." indicator appears. Clicking the mic again stops recording and sends the audio to the voice endpoint.</td></tr>
+                <tr><td><strong>Typing Indicator</strong></td><td>Three animated dots appear on the left side while the AI is generating a response.</td></tr>
+                <tr><td><strong>Feedback</strong></td><td>Each assistant message displays thumbs up/down buttons. Clicking one submits feedback to the backend and visually highlights the selected option.</td></tr>
+                <tr><td><strong>Auto-Resize Input</strong></td><td>The textarea automatically grows as the user types (up to 150px max height), then becomes scrollable.</td></tr>
+                <tr><td><strong>Conversation Switching</strong></td><td>Clicking a conversation in the sidebar loads its messages. The active conversation is visually highlighted.</td></tr>
+                <tr><td><strong>New Chat</strong></td><td>Clicking "+ New Chat" clears the message area and shows the Empty State with suggestion cards.</td></tr>
+                <tr><td><strong>Theme Toggle</strong></td><td>A moon/sun icon button in the header toggles between dark and light themes. Preference is persisted.</td></tr>
+                <tr><td><strong>Password Visibility</strong></td><td>Eye/EyeOff icon toggles password field between hidden and visible text on the login page.</td></tr>
+                <tr><td><strong>Empty State Suggestions</strong></td><td>Four clickable cards (e.g., "How do I return a product?") that auto-submit as a message when clicked.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECTION 7: Accessibility -->
+    <div class="section">
+        <h2><span class="section-number">7</span> Accessibility and Responsiveness</h2>
+
+        <h3>7.1 Accessibility (a11y)</h3>
+        <ul>
+            <li><strong>Radix UI Primitives:</strong> All 57 UI components are built on Radix UI, which provides WAI-ARIA compliant keyboard navigation, focus management, and screen reader support out of the box.</li>
+            <li><strong>Semantic HTML:</strong> Proper use of <code>&lt;form&gt;</code>, <code>&lt;label&gt;</code>, <code>&lt;button&gt;</code>, and <code>&lt;header&gt;</code> elements throughout the application.</li>
+            <li><strong>Keyboard Navigation:</strong> Enter to send messages, Shift+Enter for newline, Tab navigation for all interactive elements.</li>
+            <li><strong>Colour Contrast:</strong> OKLCH colour system ensures perceptually uniform contrast ratios between text and background in both themes.</li>
+            <li><strong>Focus Indicators:</strong> Visible outline ring on focused elements using <code>outline-ring/50</code> utility.</li>
+            <li><strong>Button Titles:</strong> Voice recording button includes <code>title</code> attribute ("Voice message" / "Stop recording") for screen readers.</li>
+        </ul>
+
+        <h3>7.2 Responsive Design</h3>
+        <table>
+            <thead><tr><th>Breakpoint</th><th>Behaviour</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Desktop (md+)</strong></td><td>Two-panel layout: sidebar (conversation list) + main chat area side by side.</td></tr>
+                <tr><td><strong>Mobile (&lt;md)</strong></td><td>Sidebar is hidden (<code>hidden md:block</code>). Full-width chat interface. Chat input remains accessible at the bottom.</td></tr>
+            </tbody>
+        </table>
+
+        <h3>7.3 Theme Support</h3>
+        <ul>
+            <li><strong>Dark Mode (Default):</strong> Deep navy/charcoal backgrounds with light text. Default theme set via <code>defaultTheme="dark"</code> in ThemeProvider.</li>
+            <li><strong>Light Mode:</strong> Clean white backgrounds with dark text. Togglable via the theme switch button.</li>
+            <li><strong>System Preference:</strong> <code>enableSystem</code> flag allows automatic detection of user's OS preference.</li>
+            <li><strong>Persistence:</strong> Theme preference is stored in localStorage and persisted across sessions.</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        RAG-Powered Customer Support Chatbot -- System Analysis and Design -- Section 4 of 6
+    </div>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'dark',
+        themeVariables: {
+            primaryColor: '#e94560',
+            primaryTextColor: '#fff',
+            primaryBorderColor: '#c23152',
+            lineColor: '#8892b0',
+            secondaryColor: '#16213e',
+            tertiaryColor: '#1a1a2e',
+            fontFamily: 'Inter, sans-serif'
+        },
+        flowchart: { curve: 'basis', useMaxWidth: true }
+    });
+</script>
+
+</body>
+</html>

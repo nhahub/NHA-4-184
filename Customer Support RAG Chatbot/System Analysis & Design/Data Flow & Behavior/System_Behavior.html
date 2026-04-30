@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Flow and System Behavior - RAG Customer Support Chatbot</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0f1117; color: #e0e0e0; line-height: 1.7; }
+        .page-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            padding: 60px 80px; border-bottom: 3px solid #e94560; position: relative; overflow: hidden;
+        }
+        .page-header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 80% 20%, rgba(233,69,96,0.15) 0%, transparent 50%); }
+        .page-header h1 { font-size: 2.4rem; font-weight: 800; color: #fff; position: relative; letter-spacing: -0.5px; }
+        .page-header .subtitle { font-size: 1.1rem; color: #8892b0; margin-top: 8px; font-weight: 400; position: relative; }
+        .page-header .badge { display: inline-block; background: rgba(233,69,96,0.2); color: #e94560; padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-top: 16px; border: 1px solid rgba(233,69,96,0.3); position: relative; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 50px 80px 80px; }
+        .section { margin-bottom: 50px; background: linear-gradient(135deg, #161b22 0%, #1a1f2e 100%); border-radius: 16px; padding: 40px; border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .section-number { display: inline-block; background: linear-gradient(135deg, #e94560, #c23152); color: #fff; width: 36px; height: 36px; border-radius: 10px; text-align: center; line-height: 36px; font-weight: 700; font-size: 0.95rem; margin-right: 14px; vertical-align: middle; }
+        .section h2 { font-size: 1.6rem; font-weight: 700; color: #fff; margin-bottom: 24px; display: flex; align-items: center; }
+        .section h3 { font-size: 1.15rem; font-weight: 600; color: #e94560; margin: 28px 0 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(233,69,96,0.2); }
+        .section p, .section li { color: #b0b8c8; font-size: 0.95rem; line-height: 1.8; }
+        .section ul { padding-left: 24px; margin: 12px 0; }
+        .section li { margin-bottom: 8px; }
+        .section li strong { color: #e0e0e0; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9rem; }
+        thead th { background: linear-gradient(135deg, #e94560, #c23152); color: #fff; padding: 14px 18px; text-align: left; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        thead th:first-child { border-radius: 10px 0 0 0; }
+        thead th:last-child { border-radius: 0 10px 0 0; }
+        tbody td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #b0b8c8; vertical-align: top; }
+        tbody tr:hover { background: rgba(233,69,96,0.05); }
+        tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+        .diagram-container { background: #0d1117; border-radius: 12px; padding: 30px; margin: 24px 0; border: 1px solid rgba(255,255,255,0.08); overflow-x: auto; }
+        .diagram-container .mermaid { display: flex; justify-content: center; }
+        .diagram-label { text-align: center; color: #8892b0; font-size: 0.85rem; font-style: italic; margin-top: 12px; }
+        .highlight-box { background: rgba(233,69,96,0.08); border-left: 4px solid #e94560; padding: 18px 24px; border-radius: 0 10px 10px 0; margin: 20px 0; }
+        .highlight-box p { color: #c8cede; font-size: 0.92rem; }
+        code { background: rgba(233,69,96,0.15); color: #e94560; padding: 2px 8px; border-radius: 4px; font-size: 0.88rem; font-family: 'Courier New', monospace; }
+        .footer { text-align: center; padding: 30px; color: #555; font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 40px; }
+        @media print {
+            body { background: #fff; color: #222; }
+            .page-header { background: #1a1a2e !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .section { border: 1px solid #ddd; box-shadow: none; background: #fff !important; }
+            .section p, .section li, tbody td { color: #333; }
+            .section h3 { color: #c23152; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <h1>Data Flow and System Behaviour</h1>
+    <div class="subtitle">DFD, Sequence Diagrams, Activity Diagram, State Diagram, and Class Diagram</div>
+    <div class="badge">Section 3 of 6 -- RAG-Powered Customer Support Chatbot</div>
+</div>
+
+<div class="container">
+
+    <!-- ==================== DFD ==================== -->
+    <div class="section">
+        <h2><span class="section-number">1</span> Data Flow Diagrams (DFD)</h2>
+
+        <h3>1.1 Context-Level DFD (Level 0)</h3>
+        <p>The context-level DFD shows the system as a single process and its interactions with external entities.</p>
+        <div class="diagram-container">
+            <pre class="mermaid">
+graph LR
+    U["Customer"] -->|"Text Query / Voice Audio"| S["RAG Chatbot System"]
+    S -->|"Text Answer + Audio Response"| U
+    U -->|"Feedback (Thumbs Up/Down)"| S
+    U -->|"Google Login Request"| S
+
+    A["Administrator"] -->|"Views Dashboard"| S
+    S -->|"KPIs, Metrics, Logs"| A
+
+    G["Google OAuth Service"] -->|"Auth Token + User Info"| S
+    S -->|"Auth Redirect"| G
+
+    E["ElevenLabs API"] -->|"MP3 Audio Bytes"| S
+    S -->|"Text for Synthesis"| E
+
+    GR["Groq LLM API"] -->|"Generated Text"| S
+    S -->|"Prompt + Context"| GR
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 1: Context-Level Data Flow Diagram (Level 0)</div>
+
+        <h3>1.2 Level-1 DFD</h3>
+        <p>The Level-1 DFD decomposes the system into its major internal processes and data stores.</p>
+        <div class="diagram-container">
+            <pre class="mermaid">
+graph TD
+    U["Customer"] -->|"Text Query"| P1["1.0 Process Text Query"]
+    U -->|"Audio File"| P2["2.0 Process Voice Query"]
+    U -->|"Google Login"| P3["3.0 Authenticate User"]
+    U -->|"Rating"| P4["4.0 Record Feedback"]
+
+    P2 -->|"Transcribed Text"| P1
+
+    P1 -->|"Question"| P5["5.0 Classify Intent"]
+    P5 -->|"SUPPORT"| P6["6.0 Retrieve Context"]
+    P5 -->|"CASUAL"| P7["7.0 Generate Direct Answer"]
+
+    P6 -->|"Relevant Chunks"| P8["8.0 Generate RAG Answer"]
+    P8 -->|"Low Confidence"| P9["9.0 Verify Answer"]
+
+    P6 <-->|"Embeddings"| DS1[("ChromaDB")]
+    P1 <-->|"Messages"| DS2[("PostgreSQL")]
+    P3 <-->|"User Data"| DS2
+    P4 -->|"Feedback"| DS2
+
+    P8 -->|"Answer Text"| P10["10.0 Generate Audio"]
+    P7 -->|"Answer Text"| P10
+    P10 -->|"Text + Audio"| U
+
+    A["Administrator"] -->|"Request"| P11["11.0 Display Dashboard"]
+    P11 <-->|"Metrics"| DS3[("Prometheus")]
+    P11 <-->|"Experiments"| DS4[("MLflow")]
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 2: Level-1 Data Flow Diagram</div>
+    </div>
+
+    <!-- ==================== SEQUENCE DIAGRAMS ==================== -->
+    <div class="section">
+        <h2><span class="section-number">2</span> Sequence Diagrams</h2>
+
+        <h3>2.1 Text Query Flow (Support Intent)</h3>
+        <p>This diagram shows the complete interaction flow when a customer submits a support-related text query through the <code>/chat/ask</code> endpoint.</p>
+        <div class="diagram-container">
+            <pre class="mermaid">
+sequenceDiagram
+    actor Customer
+    participant FE as Next.js Frontend
+    participant API as FastAPI /chat/ask
+    participant RL as Rate Limiter
+    participant Router as LLM Router
+    participant Gen as Generator
+    participant Ret as Retriever
+    participant Emb as Embedder
+    participant VDB as ChromaDB
+    participant LLM as Groq LLM API
+    participant DB as PostgreSQL
+    participant Prom as Prometheus
+
+    Customer->>FE: Submit Question
+    FE->>API: POST /chat/ask (JWT + question)
+    API->>RL: Check Rate Limit (10/min)
+    RL-->>API: Allowed
+
+    API->>DB: Load Conversation History (last 6 msgs)
+    DB-->>API: History Messages
+
+    API->>Router: classify(question)
+    Router->>LLM: Classify Intent
+    LLM-->>Router: "SUPPORT"
+    Router-->>API: intent = SUPPORT
+
+    API->>Gen: rewrite_query(question, history)
+    Gen->>LLM: Rewrite if vague
+    LLM-->>Gen: Rewritten Question
+    Gen-->>API: Clear Question
+
+    API->>Ret: retrieve(question, n=3)
+    Ret->>Emb: Embed Question
+    Emb-->>Ret: 384-dim Vector
+    Ret->>VDB: query(vector, top_3)
+    VDB-->>Ret: Matching Chunks + Distances
+    Ret-->>API: Results + Confidence
+
+    API->>Gen: generate_answer(question, chunks, history)
+    Gen->>LLM: Prompt + Context + History
+    LLM-->>Gen: Generated Answer
+    Gen-->>API: Answer Text
+
+    Note over API: Confidence >= 0.5 → Return directly
+
+    API->>DB: Save ChatMessage
+    API->>Prom: Record Metrics
+    API-->>FE: JSON Response
+    FE-->>Customer: Display Answer
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 3: Sequence Diagram -- Text Query Flow (Support Intent)</div>
+
+        <h3>2.2 Voice Query Flow</h3>
+        <p>This diagram shows the full voice interaction flow, including STT transcription and TTS audio generation via the <code>/chat/voice</code> endpoint.</p>
+        <div class="diagram-container">
+            <pre class="mermaid">
+sequenceDiagram
+    actor Customer
+    participant FE as Next.js Frontend
+    participant API as FastAPI /chat/voice
+    participant STT as Whisper (STT)
+    participant Router as LLM Router
+    participant Pipeline as Adaptive RAG Pipeline
+    participant TTS as ElevenLabs (TTS)
+    participant DB as PostgreSQL
+
+    Customer->>FE: Record Audio
+    FE->>API: POST /chat/voice (audio file)
+    API->>STT: transcribe(audio)
+    STT-->>API: Transcribed Text
+
+    API->>Router: classify(transcribed_text)
+    Router-->>API: Intent (CASUAL / SUPPORT)
+
+    API->>Pipeline: Process Query (same as /chat/ask)
+    Pipeline-->>API: Answer Text + Metadata
+
+    API->>TTS: synthesize(answer_text)
+    TTS-->>API: MP3 Audio Bytes
+
+    API->>API: Base64 Encode Audio
+    API->>DB: Save ChatMessage
+
+    API-->>FE: JSON (answer + audio_base64)
+    FE-->>Customer: Display Text + Play Audio
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 4: Sequence Diagram -- Voice Query Flow</div>
+
+        <h3>2.3 Authentication Flow</h3>
+        <div class="diagram-container">
+            <pre class="mermaid">
+sequenceDiagram
+    actor Customer
+    participant FE as Next.js Frontend
+    participant API as FastAPI /auth
+    participant Google as Google OAuth 2.0
+    participant DB as PostgreSQL
+
+    Customer->>FE: Click "Login with Google"
+    FE->>API: GET /auth/google
+    API->>Google: Redirect to Google Login
+    Google-->>Customer: Show Google Login Page
+    Customer->>Google: Enter Credentials
+    Google->>API: Callback with Auth Code
+    API->>Google: Exchange Code for Token
+    Google-->>API: Access Token + User Info
+
+    alt New User
+        API->>DB: Create User Record
+    else Existing User
+        API->>DB: Fetch User Record
+    end
+
+    API->>API: Generate JWT Token
+    API-->>FE: JWT Token + User Data
+    FE->>FE: Store Token in LocalStorage
+    FE-->>Customer: Redirect to Chat
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 5: Sequence Diagram -- Google OAuth 2.0 Authentication Flow</div>
+    </div>
+
+    <!-- ==================== ACTIVITY DIAGRAM ==================== -->
+    <div class="section">
+        <h2><span class="section-number">3</span> Activity Diagram</h2>
+        <p>The activity diagram visualises the complete workflow of the Adaptive RAG Pipeline, showing all decision points and processing paths.</p>
+
+        <div class="diagram-container">
+            <pre class="mermaid">
+flowchart TD
+    A([User Submits Query]) --> B{Input Type?}
+
+    B -->|Text| D[Validate Input]
+    B -->|Audio| C[Transcribe with Whisper]
+    C --> D
+
+    D --> E[Load Conversation History - Last 6 Messages]
+    E --> F{LLM Router: Classify Intent}
+
+    F -->|CASUAL| G[Generator: Direct Answer - No Retrieval]
+    F -->|SUPPORT| H{Has Conversation History?}
+
+    H -->|Yes| I[Rewrite Query for Clarity]
+    H -->|No| J[Use Original Query]
+    I --> K[Semantic Search in ChromaDB - Top 3]
+    J --> K
+
+    K --> L[Generator: Generate Answer with Context]
+    L --> M{Confidence Level?}
+
+    M -->|"HIGH >= 0.5"| N[Accept Answer]
+    M -->|"MEDIUM 0.2-0.5"| N
+    M -->|"LOW < 0.2"| O{Verify Answer with LLM}
+
+    O -->|VALID| P[Accept Verified Answer]
+    O -->|INVALID| Q[Return Fallback Message]
+
+    G --> R[Save Message to PostgreSQL]
+    N --> R
+    P --> R
+    Q --> R
+
+    R --> S[Log Metrics to Prometheus + MLflow]
+    S --> T{Voice Endpoint?}
+
+    T -->|Yes| U[Generate Audio via ElevenLabs TTS]
+    U --> V[Encode Audio as Base64]
+    V --> W([Return JSON: Text + Audio])
+    T -->|No| X([Return JSON: Text Only])
+
+    style F fill:#e94560,stroke:#c23152,color:#fff
+    style M fill:#e94560,stroke:#c23152,color:#fff
+    style O fill:#f0a500,stroke:#cf8d00,color:#000
+    style Q fill:#dc3545,stroke:#b02a37,color:#fff
+    style A fill:#4fc3f7,stroke:#039be5,color:#000
+    style W fill:#4caf50,stroke:#388e3c,color:#fff
+    style X fill:#4caf50,stroke:#388e3c,color:#fff
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 6: Activity Diagram -- Adaptive RAG Pipeline Complete Workflow</div>
+    </div>
+
+    <!-- ==================== STATE DIAGRAM ==================== -->
+    <div class="section">
+        <h2><span class="section-number">4</span> State Diagram</h2>
+        <p>The state diagram represents the different states of a user query as it transitions through the system processing pipeline.</p>
+
+        <div class="diagram-container">
+            <pre class="mermaid">
+stateDiagram-v2
+    [*] --> Received : User submits query
+
+    Received --> Transcribing : Audio input
+    Received --> Validating : Text input
+    Transcribing --> Validating : Transcription complete
+
+    Validating --> Rejected : Empty or invalid
+    Validating --> Classifying : Input valid
+
+    Classifying --> CasualProcessing : Intent = CASUAL
+    Classifying --> SupportProcessing : Intent = SUPPORT
+
+    CasualProcessing --> Generating : Direct LLM call
+
+    state SupportProcessing {
+        [*] --> QueryRewriting
+        QueryRewriting --> Retrieving : Rewritten query
+        Retrieving --> ContextFound : Chunks retrieved
+    }
+
+    ContextFound --> Generating : Context ready
+
+    Generating --> ConfidenceCheck : Answer generated
+
+    ConfidenceCheck --> Verified : Confidence HIGH or MEDIUM
+    ConfidenceCheck --> Verifying : Confidence LOW
+
+    Verifying --> Verified : Verification VALID
+    Verifying --> FallbackGenerated : Verification INVALID
+
+    Verified --> Persisting : Save to database
+    FallbackGenerated --> Persisting : Save fallback
+
+    Persisting --> AudioGenerating : Voice endpoint
+    Persisting --> Completed : Text endpoint
+
+    AudioGenerating --> Completed : Audio encoded
+
+    Completed --> [*]
+    Rejected --> [*]
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 7: State Diagram -- User Query Lifecycle</div>
+    </div>
+
+    <!-- ==================== CLASS DIAGRAM ==================== -->
+    <div class="section">
+        <h2><span class="section-number">5</span> Class Diagram</h2>
+        <p>The class diagram defines the structure of the system's core components, showing classes, attributes, methods, and their relationships.</p>
+
+        <div class="diagram-container">
+            <pre class="mermaid">
+classDiagram
+    class LLMRouter {
+        -Groq client
+        -String model
+        +List VALID_INTENTS
+        +classify(question: str) Dict
+    }
+
+    class Generator {
+        -Groq client
+        -String model
+        +generate_answer(question, chunks, history) str
+        +rewrite_query(question, history) str
+        +direct_answer(question, history) str
+        +verify_answer(question, answer, context) Dict
+    }
+
+    class Retriever {
+        -Embedder embedder
+        -VectorDB vector_db
+        +retrieve(question, n_results, filter) List
+        +get_best_answer(question) Dict
+        +get_answer_with_context(question, n_results) Dict
+    }
+
+    class Embedder {
+        -SentenceTransformer model
+        -String model_name
+        +embed_text(text: str) List
+        +embed_texts(texts: List) ndarray
+    }
+
+    class VectorDB {
+        -PersistentClient client
+        -Collection collection
+        -String db_path
+        +add_chunks(ids, documents, embeddings, metadatas)
+        +search(query_text, n_results) Dict
+        +count() int
+    }
+
+    class Transcriber {
+        -WhisperModel model
+        +transcribe(audio_path: str) str
+    }
+
+    class TextToSpeech {
+        -String api_key
+        -String voice_id
+        +synthesize(text: str) bytes
+    }
+
+    class ChatRouter {
+        -Retriever retriever
+        -Generator generator
+        -Transcriber transcriber
+        -LLMRouter llm_router
+        -TextToSpeech tts
+        +ask_question(request) ChatResponse
+        +voice_chat(audio, conversation_id) JSON
+        +get_conversations() List
+        +get_conversation(id) ConversationDetail
+    }
+
+    class FeedbackRouter {
+        +submit_feedback(request) FeedbackResponse
+        +get_feedback(message_id) FeedbackResponse
+    }
+
+    class AuthRouter {
+        +google_login() RedirectURL
+        +google_callback(code) JWT
+    }
+
+    ChatRouter --> LLMRouter : uses
+    ChatRouter --> Generator : uses
+    ChatRouter --> Retriever : uses
+    ChatRouter --> Transcriber : uses
+    ChatRouter --> TextToSpeech : uses
+    Retriever --> Embedder : uses
+    Retriever --> VectorDB : uses
+    Generator --> LLMRouter : "same LLM provider"
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 8: Class Diagram -- System Components and Relationships</div>
+
+        <h3>5.1 Class Responsibilities</h3>
+        <table>
+            <thead><tr><th>Class</th><th>Module</th><th>Responsibility</th></tr></thead>
+            <tbody>
+                <tr><td><strong>LLMRouter</strong></td><td>app.nlp.router</td><td>Classifies user intent as CASUAL or SUPPORT using Groq LLM</td></tr>
+                <tr><td><strong>Generator</strong></td><td>app.nlp.generator</td><td>Generates answers, rewrites queries, provides direct responses, and verifies answer quality</td></tr>
+                <tr><td><strong>Retriever</strong></td><td>app.nlp.retrieval</td><td>Retrieves relevant QA chunks from ChromaDB via semantic search</td></tr>
+                <tr><td><strong>Embedder</strong></td><td>app.nlp.embedder</td><td>Converts text to 384-dimensional vectors using sentence-transformers</td></tr>
+                <tr><td><strong>VectorDB</strong></td><td>app.nlp.vector_db</td><td>Manages ChromaDB persistent storage and query operations</td></tr>
+                <tr><td><strong>Transcriber</strong></td><td>app.nlp.transcriber</td><td>Converts audio files to text using OpenAI Whisper</td></tr>
+                <tr><td><strong>TextToSpeech</strong></td><td>app.nlp.tts</td><td>Converts text responses to MP3 audio using ElevenLabs API</td></tr>
+                <tr><td><strong>ChatRouter</strong></td><td>app.api.chat</td><td>FastAPI router handling /chat/ask, /chat/voice, and history endpoints</td></tr>
+                <tr><td><strong>FeedbackRouter</strong></td><td>app.api.feedback</td><td>FastAPI router handling feedback submission and retrieval</td></tr>
+                <tr><td><strong>AuthRouter</strong></td><td>app.api.auth</td><td>FastAPI router handling Google OAuth 2.0 authentication</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        RAG-Powered Customer Support Chatbot -- System Analysis and Design -- Section 3 of 6
+    </div>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'dark',
+        themeVariables: {
+            primaryColor: '#e94560',
+            primaryTextColor: '#fff',
+            primaryBorderColor: '#c23152',
+            lineColor: '#8892b0',
+            secondaryColor: '#16213e',
+            tertiaryColor: '#1a1a2e',
+            fontFamily: 'Inter, sans-serif'
+        },
+        flowchart: { curve: 'basis', useMaxWidth: true },
+        sequence: { useMaxWidth: true }
+    });
+</script>
+
+</body>
+</html>
+
