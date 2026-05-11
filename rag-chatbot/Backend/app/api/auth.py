@@ -1,7 +1,9 @@
 import os
 import secrets
+import httpx
 import time
 import logging
+import redis
 from authlib.integrations.starlette_client import OAuth
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
@@ -25,6 +27,13 @@ from app.mlops.metrics import auth_login_total, auth_register_total
 
 
 logger = logging.getLogger(__name__)
+
+redis_client = redis.Redis(
+    host="localhost",
+    port=6379,
+    db=0,
+    decode_responses=True
+)
 
 oauth = OAuth()
 oauth.register(
@@ -192,25 +201,64 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db))
 @router.get("/google/login")
 async def google_login(request: Request):
     logger.info("Google OAuth login initiated")
-    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback")
-    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+    state = secrets.token_urlsafe(32)
+    redis_client.setex(f"oauth:{state}", 300, "1")  # expires in 5 mins
+
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://127.0.0.1:8000/auth/google/callback")
+
+    google_auth_url = (
+        "https://accounts.google.com/o/oauth2/v2/auth"
+        f"?client_id={client_id}"
+        f"&redirect_uri={redirect_uri}"
+        f"&response_type=code"
+        f"&scope=openid email profile"
+        f"&state={state}"
+    )
+
+    return RedirectResponse(url=google_auth_url)
 
 
 @router.get("/google/callback")
 async def google_callback(request: Request, db: Session = Depends(get_db)):
     try:
-        token = await oauth.google.authorize_access_token(request)
+        state_in_request = request.query_params.get("state")
+        code = request.query_params.get("code")
+
+        if not state_in_request or not redis_client.exists(f"oauth:{state_in_request}"):
+            raise HTTPException(status_code=400, detail="Invalid state parameter")
+        redis_client.delete(f"oauth:{state_in_request}")
+
+        redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://127.0.0.1:8000/auth/google/callback")
+        async with httpx.AsyncClient() as client:
+            token_response = await client.post(
+                "https://oauth2.googleapis.com/token",
+                data={
+                    "code": code,
+                    "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+                    "client_secret": os.getenv("GOOGLE_CLIENT_SECRET"),
+                    "redirect_uri": redirect_uri,
+                    "grant_type": "authorization_code",
+                }
+            )
+            token_data = token_response.json()
+
+        async with httpx.AsyncClient() as client:
+            user_response = await client.get(
+                "https://www.googleapis.com/oauth2/v2/userinfo",
+                headers={"Authorization": f"Bearer {token_data['access_token']}"}
+            )
+            user_info = user_response.json()
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Google OAuth callback failed: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=400, detail="Google authentication failed")
-
-    user_info = token.get("userinfo")
-    if not user_info:
-        raise HTTPException(status_code=400, detail="Could not get user info from Google")
+        raise HTTPException(status_code=400, detail=f"Google authentication failed: {str(e)}")
 
     email = user_info.get("email")
-    google_id = user_info.get("sub")
-    name = user_info.get("name", "")
+    google_id = user_info.get("id")
     picture = user_info.get("picture", "")
 
     # Check if user already exists (by Google ID or email)
@@ -238,21 +286,14 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         db.add(user)
         db.commit()
         db.refresh(user)
-        logger.info(f"Google OAuth: new user registered, user_id={user.id}, username={user.username}")
+        logger.info(f"Google OAuth: new user registered, user_id={user.id}")
 
     # Generate JWT token
     access_token = create_access_token(data={"sub": str(user.id)})
 
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "profile_picture": user.profile_picture
-        }
-    }
+    # Redirect to frontend with token
+    frontend_url = f"http://localhost:3000/auth/callback?access_token={access_token}"
+    return RedirectResponse(url=frontend_url)
 
 @router.get("/me")
 def get_current_user_info(current_user: User = Depends(get_current_user)):

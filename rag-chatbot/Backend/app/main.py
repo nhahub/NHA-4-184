@@ -25,20 +25,26 @@ app = FastAPI(
 environment = os.getenv("ENVIRONMENT", "development")
 setup_logging(environment)
 
-app.add_middleware(LoggingMiddleware)
-
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY", "your-secret-key"))
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SECRET_KEY", "fallback-secret-key-change-this"),
+    same_site="lax",
+    https_only=False,
+    max_age=3600
+)
+
+app.add_middleware(LoggingMiddleware)
 
 app.include_router(auth.router)
 app.include_router(chat.router)
@@ -46,7 +52,7 @@ app.include_router(feedback.router)
 
 @app.get("/", tags=["Health"])
 def root():
-    return {"status": "ok", "message": "RAG Chatbot API is running 🚀"}
+    return {"status": "ok", "message": "RAG Chatbot API is running"}
 
 @app.get("/metrics", tags=["Monitoring"])
 def metrics():
