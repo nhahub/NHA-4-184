@@ -118,6 +118,7 @@ def ask_question(
         )
         db.add(message)
         db.commit()
+        db.refresh(message)
 
         chat_requests_total.labels(status="success").inc()
         chat_response_seconds.observe(elapsed)
@@ -125,6 +126,7 @@ def ask_question(
         logger.info(f"Casual query completed: user_id={current_user.id}, pipeline=casual, duration={elapsed}")
 
         return ChatResponse(
+            message_id=message.id,
             answer=answer,
             confidence=1.0,
             matched_question="",
@@ -206,6 +208,7 @@ def ask_question(
     )
     db.add(message)
     db.commit()
+    db.refresh(message)
 
     # Build sources
     sources = []
@@ -234,6 +237,7 @@ def ask_question(
     logger.info(f"Support query completed: user_id={current_user.id}, pipeline={pipeline}, confidence={confidence}, duration={elapsed}")
 
     return ChatResponse(
+        message_id=message.id,
         answer=answer,
         confidence=confidence,
         matched_question=result["matched_question"],
@@ -341,6 +345,7 @@ async def voice_query(
         logger.info(f"Voice casual query completed: user_id={current_user.id}, pipeline=casual, duration={elapsed}")
 
         response_data = {
+            "message_id": message.id,
             "transcription": question,
             "answer": answer,
             "confidence": 1.0,
@@ -431,6 +436,7 @@ async def voice_query(
     )
     db.add(message)
     db.commit()
+    db.refresh(message)
 
     # Build sources
     sources = []
@@ -459,6 +465,7 @@ async def voice_query(
     logger.info(f"Voice support query completed: user_id={current_user.id}, pipeline={pipeline}, confidence={confidence}, duration={elapsed}")
 
     response_data = {
+        "message_id": message.id,
         "transcription": question,
         "answer": answer,
         "confidence": confidence,

@@ -27,6 +27,7 @@ class SourceChunk(BaseModel):
 
 
 class ChatResponse(BaseModel):
+    message_id: int
     answer: str
     confidence: float
     matched_question: str

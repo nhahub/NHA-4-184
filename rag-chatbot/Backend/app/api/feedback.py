@@ -111,3 +111,85 @@ def get_feedback(
 
     logger.info(f"Feedback retrieved: message_id={message_id}, user_id={current_user.id}, rating={feedback.rating}")
     return feedback
+
+
+# ==================== ADMIN: NEGATIVE FEEDBACK ====================
+
+@router.get("/admin/negative", tags=["Admin"])
+def get_negative_feedback(db: Session = Depends(get_db)):
+    """Get all messages with negative feedback (for retraining)."""
+    logger.info("Admin: fetching negative feedback")
+
+    results = db.query(
+        ChatMessage.id,
+        ChatMessage.user_query,
+        ChatMessage.llm_response,
+        ChatMessage.created_at,
+        Feedback.rating,
+        Feedback.comment
+    ).join(Feedback, Feedback.chat_message_id == ChatMessage.id).filter(
+        Feedback.rating == -1
+    ).order_by(ChatMessage.created_at.desc()).all()
+
+    return [
+        {
+            "message_id": r.id,
+            "question": r.user_query,
+            "bad_answer": r.llm_response,
+            "rating": r.rating,
+            "comment": r.comment,
+            "created_at": str(r.created_at)
+        }
+        for r in results
+    ]
+
+
+@router.post("/admin/retrain", tags=["Admin"])
+def retrain_from_feedback(
+    message_id: int,
+    correct_answer: str,
+    db: Session = Depends(get_db)
+):
+    """Add a corrected Q&A pair to ChromaDB knowledge base."""
+    from app.nlp.embedder import Embedder
+    from app.nlp.vector_db import VectorDB
+
+    logger.info(f"Admin retrain: message_id={message_id}")
+
+    # Get the original question
+    message = db.query(ChatMessage).filter(ChatMessage.id == message_id).first()
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+
+    # Create the document to add to ChromaDB
+    document = f"Q: {message.user_query}\nA: {correct_answer}"
+
+    # Embed and add to ChromaDB
+    embedder = Embedder()
+    vector_db = VectorDB()
+
+    embedding = embedder.embed_text(document)
+    doc_id = f"retrain_{message_id}"
+
+    vector_db.add_chunks(
+        ids=[doc_id],
+        documents=[document],
+        embeddings=[embedding],
+        metadatas=[{
+            "source": "admin_retrain",
+            "original_message_id": str(message_id),
+            "question": message.user_query,
+            "correct_answer": correct_answer
+        }]
+    )
+
+    logger.info(f"Admin retrain successful: message_id={message_id}, doc_id={doc_id}")
+
+    return {
+        "status": "success",
+        "message": f"Added corrected answer to knowledge base",
+        "doc_id": doc_id,
+        "question": message.user_query,
+        "correct_answer": correct_answer
+    }
+
