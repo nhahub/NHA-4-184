@@ -344,7 +344,7 @@ elif page == "🔧 Retrain Knowledge Base":
             cm.created_at
         FROM feedback f
         JOIN chat_messages cm ON f.chat_message_id = cm.id
-        WHERE f.rating = -1
+        WHERE f.rating = -1 AND (f.is_retrained IS NOT TRUE)
         ORDER BY cm.created_at DESC
     """)
 

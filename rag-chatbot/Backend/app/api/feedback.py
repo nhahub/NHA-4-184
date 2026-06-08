@@ -182,6 +182,14 @@ def retrain_from_feedback(
             "correct_answer": correct_answer
         }]
     )
+    
+    # Mark feedback as retrained so it disappears from dashboard
+    feedback = db.query(Feedback).filter(
+        Feedback.chat_message_id == message_id
+    ).first()
+    if feedback:
+        feedback.is_retrained = True
+        db.commit()
 
     logger.info(f"Admin retrain successful: message_id={message_id}, doc_id={doc_id}")
 
