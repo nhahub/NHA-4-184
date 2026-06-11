@@ -2,3 +2,5 @@ data/vector_db/
 .env
 __pycache__/
 .ipynb_checkpoints/
+mlruns/
+Backend/data/vector_db/
