@@ -149,8 +149,12 @@ def verify_otp(request: Request,body: VerifyOTPRequest, db: Session = Depends(ge
     if not otp:
         logger.warning(f"OTP verification failed: invalid otp for user_id={user.id}")
         raise HTTPException(status_code=400, detail="Invalid OTP")
+    
+    expires_at = otp.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
 
-    if otp.expires_at < datetime.now(timezone.utc):
+    if expires_at < datetime.now(timezone.utc):
         logger.warning(f"OTP verification failed: otp expired for user_id={user.id}")
         raise HTTPException(status_code=400, detail="OTP has expired")
 
