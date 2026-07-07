@@ -17,7 +17,7 @@ engine = create_engine(DATABASE_URL)
 
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "Admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "ADMIN123")
-API_BASE = "http://localhost:8000"
+API_BASE = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 
 def run_query(query: str) -> pd.DataFrame:

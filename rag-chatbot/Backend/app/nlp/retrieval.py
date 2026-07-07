@@ -30,9 +30,12 @@ class Retriever:
         logger.debug(f"Vector search started: question_len={len(question)}, n_results={n_results}, filter_metadata={filter_metadata}")
         start_time = time.time()
 
+        # Embed the query locally using our SentenceTransformer model
+        query_embedding = self.embedder.embed_text(question)
+        
         # Build query kwargs
         query_kwargs = {
-            "query_texts": [question],
+            "query_embeddings": [query_embedding],
             "n_results": n_results
         }
 

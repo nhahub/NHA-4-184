@@ -29,8 +29,8 @@ from app.mlops.metrics import auth_login_total, auth_register_total
 logger = logging.getLogger(__name__)
 
 redis_client = redis.Redis(
-    host="localhost",
-    port=6379,
+    host=os.getenv("REDIS_HOST", "localhost"),
+    port=int(os.getenv("REDIS_PORT", 6379)),
     db=0,
     decode_responses=True
 )
