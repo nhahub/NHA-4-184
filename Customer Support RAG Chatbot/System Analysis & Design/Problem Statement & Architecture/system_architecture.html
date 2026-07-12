@@ -182,6 +182,37 @@
 
         .highlight-box p { color: #c8cede; font-size: 0.92rem; }
 
+        /* Legend for use case diagram */
+        .legend {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin: 16px 0 8px;
+            padding: 16px 20px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #b0b8c8;
+        }
+        .legend-line {
+            width: 40px;
+            height: 2px;
+            border-top: 2px dashed #8892b0;
+        }
+        .legend-line.include { border-color: #4fc3f7; }
+        .legend-line.extend  { border-color: #f0a500; }
+        .legend-line.assoc   { border-color: #81c784; border-style: solid; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .legend-dot.customer { background: #4fc3f7; }
+        .legend-dot.admin    { background: #f0a500; }
+        .legend-dot.external { background: #ce93d8; }
+
         .tech-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -242,7 +273,7 @@
 <div class="page-header">
     <h1>System Analysis and Design</h1>
     <div class="subtitle">Problem Statement, Objectives, and Software Architecture</div>
-    <div class="badge">Section 1 of 6 -- RAG-Powered Customer Support Chatbot</div>
+    <div class="badge">Section 1 of 6 — RAG-Powered Customer Support Chatbot</div>
 </div>
 
 <div class="container">
@@ -292,122 +323,30 @@
         </table>
     </div>
 
-    <!-- SECTION 3: Use Case Diagram -->
+    <!-- SECTION 3: Software Architecture (moved here, after Objectives) -->
     <div class="section">
-        <h2><span class="section-number">3</span> Use Case Diagram</h2>
+        <h2><span class="section-number">3</span> Software Architecture</h2>
 
-        <div class="diagram-container">
-            <pre class="mermaid">
-graph LR
-    subgraph Actors
-        C["Customer<br/>(End User)"]
-        A["System<br/>Administrator"]
-        G["Google OAuth<br/>(External)"]
-    end
-
-    subgraph UC["System Use Cases"]
-        UC1["UC-1: Submit Text Query"]
-        UC2["UC-2: Submit Voice Query"]
-        UC3["UC-3: Authenticate via Google"]
-        UC4["UC-4: Provide Feedback"]
-        UC5["UC-5: View Conversation History"]
-        UC6["UC-6: Monitor System Performance"]
-        UC7["UC-7: Evaluate Model Accuracy"]
-        UC8["UC-8: Review User Feedback"]
-    end
-
-    C --> UC1
-    C --> UC2
-    C --> UC3
-    C --> UC4
-    C --> UC5
-    A --> UC6
-    A --> UC7
-    A --> UC8
-    UC3 --> G
-            </pre>
-        </div>
-        <div class="diagram-label">Figure 1: Use Case Diagram -- System Actors and Interactions</div>
-
-        <h3>3.1 Use Case Descriptions</h3>
-
-        <table>
-            <thead>
-                <tr><th>Use Case</th><th>Actor</th><th>Description</th></tr>
-            </thead>
-            <tbody>
-                <tr><td><strong>UC-1: Submit Text Query</strong></td><td>Customer</td><td>The user submits a natural language question through the chat interface. The Adaptive RAG pipeline classifies the intent, retrieves relevant context if needed, generates an answer, and applies confidence-based verification before returning the response.</td></tr>
-                <tr><td><strong>UC-2: Submit Voice Query</strong></td><td>Customer</td><td>The user submits an audio recording. The system transcribes it using Whisper (STT), processes it through the same Adaptive RAG pipeline, generates a text answer, converts it to speech using ElevenLabs (TTS), and returns both text and audio responses.</td></tr>
-                <tr><td><strong>UC-3: Authenticate via Google</strong></td><td>Customer, Google</td><td>The user initiates login through Google OAuth 2.0. Upon successful authentication, the system creates or retrieves the user account and issues a JWT token for subsequent API requests.</td></tr>
-                <tr><td><strong>UC-4: Provide Feedback</strong></td><td>Customer</td><td>The user submits positive (thumbs up) or negative (thumbs down) feedback on a chatbot response. Feedback is persisted in the database and logged to MLflow and Prometheus for quality tracking.</td></tr>
-                <tr><td><strong>UC-5: View History</strong></td><td>Customer</td><td>The user retrieves their past conversations and individual messages, enabling continuity across sessions.</td></tr>
-                <tr><td><strong>UC-6: Monitor Performance</strong></td><td>Administrator</td><td>The administrator accesses the Streamlit dashboard to view real-time KPIs including response time, request throughput, retrieval confidence distribution, and error rates sourced from Prometheus.</td></tr>
-                <tr><td><strong>UC-7: Evaluate Model</strong></td><td>Administrator</td><td>The administrator reviews MLflow experiment logs to analyse model performance, compare configurations, and identify areas for accuracy improvement.</td></tr>
-                <tr><td><strong>UC-8: Review Feedback</strong></td><td>Administrator</td><td>The administrator reviews aggregated user feedback data through the dashboard to assess overall system quality and user satisfaction.</td></tr>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- SECTION 4: Software Architecture -->
-    <div class="section">
-        <h2><span class="section-number">4</span> Software Architecture</h2>
-
-        <h3>4.1 Architecture Style</h3>
+        <h3>3.1 Architecture Style</h3>
         <p>The system follows a <strong>Layered Architecture</strong> pattern with clear separation of concerns across five distinct layers. Each layer communicates only with its adjacent layers, ensuring modularity, maintainability, and independent scalability.</p>
 
-        <h3>4.2 Technology Stack</h3>
+        <h3>3.2 Technology Stack</h3>
         <div class="tech-grid">
-            <div class="tech-card">
-                <div class="label">Frontend</div>
-                <div class="value">Next.js</div>
-            </div>
-            <div class="tech-card">
-                <div class="label">Backend API</div>
-                <div class="value">FastAPI</div>
-            </div>
-            <div class="tech-card">
-                <div class="label">LLM Provider</div>
-                <div class="value">Groq (Llama)</div>
-            </div>
-            <div class="tech-card">
-                <div class="label">Vector Database</div>
-                <div class="value">ChromaDB</div>
-            </div>
-            <div class="tech-card">
-                <div class="label">Embeddings</div>
-                <div class="value">all-MiniLM-L6-v2</div>
-            </div>
-            <div class="tech-card">
-                <div class="label">Relational DB</div>
-                <div class="value">PostgreSQL</div>
-            </div>
-            <div class="tech-card">
-                <div class="label">STT Engine</div>
-                <div class="value">OpenAI Whisper</div>
-            </div>
-            <div class="tech-card">
-                <div class="label">TTS Engine</div>
-                <div class="value">ElevenLabs API</div>
-            </div>
-            <div class="tech-card">
-                <div class="label">Authentication</div>
-                <div class="value">Google OAuth 2.0</div>
-            </div>
-            <div class="tech-card">
-                <div class="label">Metrics</div>
-                <div class="value">Prometheus</div>
-            </div>
-            <div class="tech-card">
-                <div class="label">Experiment Tracking</div>
-                <div class="value">MLflow</div>
-            </div>
-            <div class="tech-card">
-                <div class="label">Dashboard</div>
-                <div class="value">Streamlit</div>
-            </div>
+            <div class="tech-card"><div class="label">Frontend</div><div class="value">Next.js</div></div>
+            <div class="tech-card"><div class="label">Backend API</div><div class="value">FastAPI</div></div>
+            <div class="tech-card"><div class="label">LLM Provider</div><div class="value">Groq (Llama)</div></div>
+            <div class="tech-card"><div class="label">Vector Database</div><div class="value">ChromaDB</div></div>
+            <div class="tech-card"><div class="label">Embeddings</div><div class="value">all-MiniLM-L6-v2</div></div>
+            <div class="tech-card"><div class="label">Relational DB</div><div class="value">PostgreSQL</div></div>
+            <div class="tech-card"><div class="label">STT Engine</div><div class="value">OpenAI Whisper</div></div>
+            <div class="tech-card"><div class="label">TTS Engine</div><div class="value">ElevenLabs API</div></div>
+            <div class="tech-card"><div class="label">Authentication</div><div class="value">Google OAuth 2.0</div></div>
+            <div class="tech-card"><div class="label">Metrics</div><div class="value">Prometheus</div></div>
+            <div class="tech-card"><div class="label">Experiment Tracking</div><div class="value">MLflow</div></div>
+            <div class="tech-card"><div class="label">Dashboard</div><div class="value">Streamlit</div></div>
         </div>
 
-        <h3>4.3 High-Level Architecture Diagram</h3>
+        <h3>3.3 High-Level Architecture Diagram</h3>
         <div class="diagram-container">
             <pre class="mermaid">
 graph TD
@@ -472,9 +411,9 @@ graph TD
     end
             </pre>
         </div>
-        <div class="diagram-label">Figure 2: High-Level System Architecture Diagram</div>
+        <div class="diagram-label">Figure 1: High-Level System Architecture Diagram</div>
 
-        <h3>4.4 Layer Descriptions</h3>
+        <h3>3.4 Layer Descriptions</h3>
         <table>
             <thead>
                 <tr><th>Layer</th><th>Responsibility</th><th>Components</th></tr>
@@ -489,6 +428,120 @@ graph TD
         </table>
     </div>
 
+    <!-- SECTION 4: Use Case Diagram -->
+    <div class="section">
+        <h2><span class="section-number">4</span> Use Case Diagram</h2>
+
+        <p>The diagram below follows the standard UML use case notation with a system boundary, two actor types, and explicit <strong>«include»</strong> and <strong>«extend»</strong> relationships.</p>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot customer"></div> Customer (End User)</div>
+            <div class="legend-item"><div class="legend-dot admin"></div> System Administrator</div>
+            <div class="legend-item"><div class="legend-line assoc"></div> Association</div>
+            <div class="legend-item"><div class="legend-line include"></div> «include» — always executed</div>
+            <div class="legend-item"><div class="legend-line extend"></div> «extend» — optional / conditional</div>
+        </div>
+
+        <div class="diagram-container">
+            <pre class="mermaid">
+graph LR
+    %% ── Actors ──────────────────────────────────────────────
+    C(["👤 Customer"])
+    A(["🔧 Administrator"])
+
+    %% ── System Boundary ─────────────────────────────────────
+    subgraph SYS["RAG Customer Support Chatbot System"]
+
+        %% ── Shared / Included Use Cases ─────────────────────
+        subgraph SHARED["Shared Use Cases"]
+            AUTH_UC["Authenticate User\n(Login / Register)"]
+        end
+
+        %% ── Customer Use Cases ──────────────────────────────
+        subgraph CUST_UC["Customer Use Cases"]
+            UC1["Submit Text Query"]
+            UC2["Submit Voice Query"]
+            UC4["Provide Feedback"]
+            UC5["View Conversation History"]
+
+            %% included sub-use-cases
+            HIST_UC["Load Conversation History"]
+            TTS_UC["Play Audio Response"]
+            REWRITE_UC["Rewrite Query\n(if follow-up)"]
+        end
+
+        %% ── Admin Use Cases ─────────────────────────────────
+        subgraph ADMIN_UC["Administrator Use Cases"]
+            UC6["Monitor System Performance"]
+            UC7["Evaluate Model Accuracy"]
+            UC8["Review User Feedback"]
+        end
+
+    end
+
+    %% ── Actor Associations ───────────────────────────────────
+    C --- AUTH_UC
+    C --- UC1
+    C --- UC2
+    C --- UC4
+    C --- UC5
+    A --- UC6
+    A --- UC7
+    A --- UC8
+
+    %% ── «include» relationships ─────────────────────────────
+    UC1     -.->|"«include»"| AUTH_UC
+    UC2     -.->|"«include»"| AUTH_UC
+    UC4     -.->|"«include»"| AUTH_UC
+    UC5     -.->|"«include»"| AUTH_UC
+    UC5     -.->|"«include»"| HIST_UC
+    UC1     -.->|"«include»"| REWRITE_UC
+
+    %% ── «extend» relationships ──────────────────────────────
+    TTS_UC  -.->|"«extend»"| UC2
+    UC8     -.->|"«extend»"| UC6
+
+    %% ── Styling ─────────────────────────────────────────────
+    style CUST_UC  fill:#0d2137,stroke:#4fc3f7,stroke-width:1.5px,color:#e0e0e0
+    style ADMIN_UC fill:#1a1200,stroke:#f0a500,stroke-width:1.5px,color:#e0e0e0
+    style SHARED   fill:#1a0d2e,stroke:#ce93d8,stroke-width:1.5px,color:#e0e0e0
+    style SYS      fill:#12161f,stroke:#e94560,stroke-width:2px,color:#ffffff
+            </pre>
+        </div>
+        <div class="diagram-label">Figure 2: Use Case Diagram — System Actors, Boundaries, Include &amp; Extend Relationships</div>
+
+        <h3>4.1 Relationships Explained</h3>
+        <table>
+            <thead>
+                <tr><th>Relationship</th><th>Type</th><th>Meaning</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Submit Text/Voice Query → Authenticate User</td><td>«include»</td><td>Every query requires the user to be authenticated first — always executed.</td></tr>
+                <tr><td>View History → Load Conversation History</td><td>«include»</td><td>Viewing history always triggers loading past messages from the database.</td></tr>
+                <tr><td>Submit Text Query → Rewrite Query</td><td>«include»</td><td>The system always checks conversation history and rewrites vague follow-up queries before retrieval.</td></tr>
+                <tr><td>Play Audio Response → Submit Voice Query</td><td>«extend»</td><td>TTS audio playback is optional — only happens when ElevenLabs is available and the voice endpoint is used.</td></tr>
+                <tr><td>Review User Feedback → Monitor Performance</td><td>«extend»</td><td>Admins may optionally drill into feedback details while viewing the performance dashboard.</td></tr>
+            </tbody>
+        </table>
+
+        <h3>4.2 Use Case Descriptions</h3>
+        <table>
+            <thead>
+                <tr><th>Use Case</th><th>Actor</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>UC-1: Submit Text Query</strong></td><td>Customer</td><td>The user submits a natural language question through the chat interface. The Adaptive RAG pipeline classifies the intent, retrieves relevant context if needed, generates an answer, and applies confidence-based verification before returning the response. <em>Includes: Authenticate User, Rewrite Query.</em></td></tr>
+                <tr><td><strong>UC-2: Submit Voice Query</strong></td><td>Customer</td><td>The user submits an audio recording. The system transcribes it using Whisper (STT), processes it through the same Adaptive RAG pipeline, and returns a text answer. <em>Includes: Authenticate User. Extends: Play Audio Response (when TTS is available).</em></td></tr>
+                <tr><td><strong>UC-3: Authenticate User</strong></td><td>Customer</td><td>The user logs in via username/password. Upon successful authentication, a JWT token is issued for subsequent API requests.</td></tr>
+                <tr><td><strong>UC-4: Provide Feedback</strong></td><td>Customer</td><td>The user submits thumbs-up or thumbs-down feedback on a chatbot response. Feedback is persisted and logged to MLflow and Prometheus. <em>Includes: Authenticate User.</em></td></tr>
+                <tr><td><strong>UC-5: View Conversation History</strong></td><td>Customer</td><td>The user retrieves past conversations and individual messages for session continuity. <em>Includes: Authenticate User, Load Conversation History.</em></td></tr>
+                <tr><td><strong>UC-6: Monitor System Performance</strong></td><td>Administrator</td><td>The administrator views real-time KPIs — response time, throughput, confidence distribution, error rates — via the Streamlit dashboard sourced from Prometheus. <em>Extended by: Review User Feedback.</em></td></tr>
+                <tr><td><strong>UC-7: Evaluate Model Accuracy</strong></td><td>Administrator</td><td>The administrator reviews MLflow experiment logs to analyse model performance and compare configurations.</td></tr>
+                <tr><td><strong>UC-8: Review User Feedback</strong></td><td>Administrator</td><td>The administrator reviews aggregated feedback to assess quality and user satisfaction. <em>Extends: Monitor System Performance.</em></td></tr>
+            </tbody>
+        </table>
+    </div>
+
     <!-- SECTION 5: Adaptive RAG Pipeline -->
     <div class="section">
         <h2><span class="section-number">5</span> Adaptive RAG Pipeline</h2>
@@ -499,23 +552,23 @@ graph TD
         <div class="diagram-container">
             <pre class="mermaid">
 flowchart TD
-    A["User Query<br/>(Text or Voice)"] --> B{"LLM Router<br/>Intent Classification"}
+    A["User Query\n(Text or Voice)"] --> B{"LLM Router\nIntent Classification"}
 
-    B -->|"Intent: Casual<br/>(Greeting, Thanks)"| C["Direct LLM Response<br/>(Skip Retrieval)"]
-    B -->|"Intent: Support<br/>(Product Question)"| D["Query Rewriting<br/>(If conversation history exists)"]
+    B -->|"Intent: Casual\n(Greeting, Thanks)"| C["Direct LLM Response\n(Skip Retrieval)"]
+    B -->|"Intent: Support\n(Product Question)"| D["Query Rewriting\n(If conversation history exists)"]
 
-    D --> E["Semantic Search<br/>(ChromaDB + all-MiniLM-L6-v2)"]
-    E --> F["LLM Answer Generation<br/>(Groq / Llama)"]
-    F --> G{"Confidence<br/>Scoring"}
+    D --> E["Semantic Search\n(ChromaDB + all-MiniLM-L6-v2)"]
+    E --> F["LLM Answer Generation\n(Groq / Llama)"]
+    F --> G{"Confidence\nScoring"}
 
-    G -->|"HIGH >= 0.5"| H["Return Answer<br/>(High Confidence Path)"]
-    G -->|"MEDIUM 0.2 - 0.5"| I["Return Answer<br/>(Medium Confidence Path)"]
-    G -->|"LOW < 0.2"| J{"Answer Verification<br/>(LLM Cross-Check)"}
+    G -->|"HIGH >= 0.5"| H["Return Answer\n(High Confidence Path)"]
+    G -->|"MEDIUM 0.2 - 0.5"| I["Return Answer\n(Medium Confidence Path)"]
+    G -->|"LOW < 0.2"| J{"Answer Verification\n(LLM Cross-Check)"}
 
-    J -->|"Verified = True"| K["Return Answer<br/>(Low Confidence Verified)"]
-    J -->|"Verified = False"| L["Return Fallback<br/>(Low Confidence Rejected)"]
+    J -->|"Verified = True"| K["Return Answer\n(Low Confidence Verified)"]
+    J -->|"Verified = False"| L["Return Fallback\n(Low Confidence Rejected)"]
 
-    C --> M["Save to Database<br/>+ Log to MLflow<br/>+ Prometheus Metrics"]
+    C --> M["Save to Database\n+ Log to MLflow\n+ Prometheus Metrics"]
     H --> M
     I --> M
     K --> M
@@ -538,8 +591,8 @@ flowchart TD
                 <tr><td><strong>Casual</strong></td><td>Router classifies intent as casual</td><td>Skips retrieval entirely; LLM generates a direct conversational response.</td><td>"Hello, how are you?"</td></tr>
                 <tr><td><strong>High Confidence</strong></td><td>Retrieval confidence >= 0.5</td><td>Returns the generated answer directly without additional verification.</td><td>"Can you resend the verification link?"</td></tr>
                 <tr><td><strong>Medium Confidence</strong></td><td>Confidence between 0.2 and 0.5</td><td>Returns the generated answer; confidence is logged for monitoring.</td><td>"How do I return a product?"</td></tr>
-                <tr><td><strong>Low Confidence (Verified)</strong></td><td>Confidence < 0.2, verification passes</td><td>A secondary LLM check confirms the answer is supported by the retrieved context.</td><td>Edge-case domain questions</td></tr>
-                <tr><td><strong>Low Confidence (Rejected)</strong></td><td>Confidence < 0.2, verification fails</td><td>The system returns a safe fallback message instead of a potentially hallucinated answer.</td><td>"Do you accept Bitcoin payments?"</td></tr>
+                <tr><td><strong>Low Confidence (Verified)</strong></td><td>Confidence &lt; 0.2, verification passes</td><td>A secondary LLM check confirms the answer is supported by the retrieved context.</td><td>Edge-case domain questions</td></tr>
+                <tr><td><strong>Low Confidence (Rejected)</strong></td><td>Confidence &lt; 0.2, verification fails</td><td>The system returns a safe fallback message instead of a potentially hallucinated answer.</td><td>"Do you accept Bitcoin payments?"</td></tr>
             </tbody>
         </table>
 
@@ -553,7 +606,7 @@ flowchart TD
     </div>
 
     <div class="footer">
-        RAG-Powered Customer Support Chatbot -- System Analysis and Design -- Section 1 of 6
+        RAG-Powered Customer Support Chatbot — System Analysis and Design — Section 1 of 6
     </div>
 
 </div>

@@ -54,7 +54,7 @@
 <div class="page-header">
     <h1>Data Flow and System Behaviour</h1>
     <div class="subtitle">DFD, Sequence Diagrams, Activity Diagram, State Diagram, and Class Diagram</div>
-    <div class="badge">Section 3 of 6 -- RAG-Powered Customer Support Chatbot</div>
+    <div class="badge">Section 3 of 6 — RAG-Powered Customer Support Chatbot</div>
 </div>
 
 <div class="container">
@@ -64,61 +64,68 @@
         <h2><span class="section-number">1</span> Data Flow Diagrams (DFD)</h2>
 
         <h3>1.1 Context-Level DFD (Level 0)</h3>
-        <p>The context-level DFD shows the system as a single process and its interactions with external entities.</p>
+        <p>The context-level DFD shows the system as a single process and the data it exchanges with external entities. The focus is on what data enters and leaves the system.</p>
         <div class="diagram-container">
             <pre class="mermaid">
 graph LR
-    U["Customer"] -->|"Text Query / Voice Audio"| S["RAG Chatbot System"]
-    S -->|"Text Answer + Audio Response"| U
-    U -->|"Feedback (Thumbs Up/Down)"| S
-    U -->|"Google Login Request"| S
-
-    A["Administrator"] -->|"Views Dashboard"| S
-    S -->|"KPIs, Metrics, Logs"| A
-
-    G["Google OAuth Service"] -->|"Auth Token + User Info"| S
-    S -->|"Auth Redirect"| G
+    U["Customer"] -->|"Text Query / Voice Audio / Feedback Rating"| S["RAG Chatbot System"]
+    S -->|"Text Answer / Audio Response / Chat History"| U
 
     E["ElevenLabs API"] -->|"MP3 Audio Bytes"| S
-    S -->|"Text for Synthesis"| E
+    S -->|"Answer Text for Synthesis"| E
 
-    GR["Groq LLM API"] -->|"Generated Text"| S
-    S -->|"Prompt + Context"| GR
+    GR["Groq LLM API"] -->|"Generated Answer Text"| S
+    S -->|"Prompt + Retrieved Context + History"| GR
+
+    HF["HuggingFace\n(all-MiniLM-L6-v2)"] -->|"384-dim Embedding Vectors"| S
+    S -->|"Raw Text for Embedding"| HF
             </pre>
         </div>
         <div class="diagram-label">Figure 1: Context-Level Data Flow Diagram (Level 0)</div>
 
         <h3>1.2 Level-1 DFD</h3>
-        <p>The Level-1 DFD decomposes the system into its major internal processes and data stores.</p>
+        <p>The Level-1 DFD decomposes the system into its major internal processes, showing how data moves between processes and is stored or retrieved from data stores.</p>
         <div class="diagram-container">
             <pre class="mermaid">
 graph TD
-    U["Customer"] -->|"Text Query"| P1["1.0 Process Text Query"]
-    U -->|"Audio File"| P2["2.0 Process Voice Query"]
-    U -->|"Google Login"| P3["3.0 Authenticate User"]
-    U -->|"Rating"| P4["4.0 Record Feedback"]
+    U["Customer"]
 
+    %% Inputs
+    U -->|"Audio File (.webm)"| P2["2.0 Transcribe Audio\n(Whisper STT)"]
+    U -->|"Text Query"| P1["1.0 Validate & Load Context"]
+    U -->|"Feedback Rating"| P4["4.0 Record Feedback"]
+
+    %% Transcription feeds into query processing
     P2 -->|"Transcribed Text"| P1
 
-    P1 -->|"Question"| P5["5.0 Classify Intent"]
-    P5 -->|"SUPPORT"| P6["6.0 Retrieve Context"]
-    P5 -->|"CASUAL"| P7["7.0 Generate Direct Answer"]
+    %% Context loading
+    P1 <-->|"Read: Last 6 Messages"| DS2[("PostgreSQL\nConversations / Messages")]
+    P1 -->|"Query + History"| P5["5.0 Classify Intent\n(LLM Router)"]
 
-    P6 -->|"Relevant Chunks"| P8["8.0 Generate RAG Answer"]
-    P8 -->|"Low Confidence"| P9["9.0 Verify Answer"]
+    %% Intent routing
+    P5 -->|"Intent = SUPPORT + Query"| P6["6.0 Embed & Retrieve\n(Embedder + ChromaDB)"]
+    P5 -->|"Intent = CASUAL + Query"| P7["7.0 Generate Direct Answer\n(Groq LLM)"]
 
-    P6 <-->|"Embeddings"| DS1[("ChromaDB")]
-    P1 <-->|"Messages"| DS2[("PostgreSQL")]
-    P3 <-->|"User Data"| DS2
-    P4 -->|"Feedback"| DS2
+    %% Retrieval
+    P6 <-->|"Store / Query Vectors"| DS1[("ChromaDB\nEmbedded QA Chunks")]
+    P6 -->|"Top-3 Chunks + Confidence Score"| P8["8.0 Generate RAG Answer\n(Groq LLM)"]
 
-    P8 -->|"Answer Text"| P10["10.0 Generate Audio"]
-    P7 -->|"Answer Text"| P10
-    P10 -->|"Text + Audio"| U
+    %% Low confidence verification
+    P8 -->|"Low Confidence Answer"| P9["9.0 Verify Answer\n(LLM Cross-Check)"]
+    P9 -->|"Verified / Fallback Answer"| P10["10.0 Persist & Respond"]
 
-    A["Administrator"] -->|"Request"| P11["11.0 Display Dashboard"]
-    P11 <-->|"Metrics"| DS3[("Prometheus")]
-    P11 <-->|"Experiments"| DS4[("MLflow")]
+    %% High/medium confidence skips verification
+    P8 -->|"High / Medium Confidence Answer"| P10
+    P7 -->|"Casual Answer"| P10
+
+    %% Persistence
+    P10 -->|"Write: ChatMessage Record"| DS2
+    P4 -->|"Write: Feedback Record"| DS2
+
+    %% TTS
+    P10 -->|"Answer Text (voice endpoint only)"| P11["11.0 Synthesize Audio\n(ElevenLabs TTS)"]
+    P11 -->|"Base64 Audio"| U
+    P10 -->|"JSON Response (text + audio)"| U
             </pre>
         </div>
         <div class="diagram-label">Figure 2: Level-1 Data Flow Diagram</div>
@@ -184,7 +191,7 @@ sequenceDiagram
     FE-->>Customer: Display Answer
             </pre>
         </div>
-        <div class="diagram-label">Figure 3: Sequence Diagram -- Text Query Flow (Support Intent)</div>
+        <div class="diagram-label">Figure 3: Sequence Diagram — Text Query Flow (Support Intent)</div>
 
         <h3>2.2 Voice Query Flow</h3>
         <p>This diagram shows the full voice interaction flow, including STT transcription and TTS audio generation via the <code>/chat/voice</code> endpoint.</p>
@@ -221,153 +228,129 @@ sequenceDiagram
     FE-->>Customer: Display Text + Play Audio
             </pre>
         </div>
-        <div class="diagram-label">Figure 4: Sequence Diagram -- Voice Query Flow</div>
-
-        <h3>2.3 Authentication Flow</h3>
-        <div class="diagram-container">
-            <pre class="mermaid">
-sequenceDiagram
-    actor Customer
-    participant FE as Next.js Frontend
-    participant API as FastAPI /auth
-    participant Google as Google OAuth 2.0
-    participant DB as PostgreSQL
-
-    Customer->>FE: Click "Login with Google"
-    FE->>API: GET /auth/google
-    API->>Google: Redirect to Google Login
-    Google-->>Customer: Show Google Login Page
-    Customer->>Google: Enter Credentials
-    Google->>API: Callback with Auth Code
-    API->>Google: Exchange Code for Token
-    Google-->>API: Access Token + User Info
-
-    alt New User
-        API->>DB: Create User Record
-    else Existing User
-        API->>DB: Fetch User Record
-    end
-
-    API->>API: Generate JWT Token
-    API-->>FE: JWT Token + User Data
-    FE->>FE: Store Token in LocalStorage
-    FE-->>Customer: Redirect to Chat
-            </pre>
-        </div>
-        <div class="diagram-label">Figure 5: Sequence Diagram -- Google OAuth 2.0 Authentication Flow</div>
+        <div class="diagram-label">Figure 4: Sequence Diagram — Voice Query Flow</div>
     </div>
 
     <!-- ==================== ACTIVITY DIAGRAM ==================== -->
     <div class="section">
         <h2><span class="section-number">3</span> Activity Diagram</h2>
-        <p>The activity diagram visualises the complete workflow of the Adaptive RAG Pipeline, showing all decision points and processing paths.</p>
+        <p>The activity diagram models the <strong>actions and decisions</strong> performed by the system when processing a user query — from input submission through to delivering the final response.</p>
 
         <div class="diagram-container">
             <pre class="mermaid">
 flowchart TD
-    A([User Submits Query]) --> B{Input Type?}
+    A([Start: User Submits Query]) --> B{What type of input?}
 
-    B -->|Text| D[Validate Input]
-    B -->|Audio| C[Transcribe with Whisper]
-    C --> D
+    B -->|Voice Audio| C[Record Audio in Browser]
+    B -->|Text| D[Type Message in Chat UI]
 
-    D --> E[Load Conversation History - Last 6 Messages]
-    E --> F{LLM Router: Classify Intent}
+    C --> E[Send Audio to /chat/voice]
+    D --> F[Send Text to /chat/ask]
 
-    F -->|CASUAL| G[Generator: Direct Answer - No Retrieval]
-    F -->|SUPPORT| H{Has Conversation History?}
+    E --> G[Transcribe Audio with Whisper STT]
+    G --> H[Get Transcribed Text]
+    F --> H
 
-    H -->|Yes| I[Rewrite Query for Clarity]
-    H -->|No| J[Use Original Query]
-    I --> K[Semantic Search in ChromaDB - Top 3]
-    J --> K
+    H --> I[Load Last 6 Messages from History]
+    I --> J[Classify Intent with LLM Router]
 
-    K --> L[Generator: Generate Answer with Context]
-    L --> M{Confidence Level?}
+    J -->|CASUAL| K[Call Generator: Direct Answer]
+    J -->|SUPPORT| L{Has conversation history?}
 
-    M -->|"HIGH >= 0.5"| N[Accept Answer]
-    M -->|"MEDIUM 0.2-0.5"| N
-    M -->|"LOW < 0.2"| O{Verify Answer with LLM}
+    L -->|Yes| M[Rewrite Query for Clarity]
+    L -->|No| N[Use Original Query]
 
-    O -->|VALID| P[Accept Verified Answer]
-    O -->|INVALID| Q[Return Fallback Message]
+    M --> O[Embed Query with all-MiniLM-L6-v2]
+    N --> O
 
-    G --> R[Save Message to PostgreSQL]
-    N --> R
-    P --> R
-    Q --> R
+    O --> P[Search ChromaDB — Top 3 Chunks]
+    P --> Q[Call Generator: Build Answer with Context]
 
-    R --> S[Log Metrics to Prometheus + MLflow]
-    S --> T{Voice Endpoint?}
+    Q --> R{Check Confidence Score}
+    R -->|"HIGH ≥ 0.5"| S[Accept Answer Directly]
+    R -->|"MEDIUM 0.2–0.5"| S
+    R -->|"LOW < 0.2"| T[Verify Answer with LLM]
 
-    T -->|Yes| U[Generate Audio via ElevenLabs TTS]
-    U --> V[Encode Audio as Base64]
-    V --> W([Return JSON: Text + Audio])
-    T -->|No| X([Return JSON: Text Only])
+    T -->|Verified| S
+    T -->|Not Verified| U[Use Fallback Message]
 
-    style F fill:#e94560,stroke:#c23152,color:#fff
-    style M fill:#e94560,stroke:#c23152,color:#fff
-    style O fill:#f0a500,stroke:#cf8d00,color:#000
-    style Q fill:#dc3545,stroke:#b02a37,color:#fff
+    K --> V[Save Message to PostgreSQL]
+    S --> V
+    U --> V
+
+    V --> W[Log Metrics to Prometheus + MLflow]
+    W --> X{Is this a voice request?}
+
+    X -->|Yes| Y[Synthesize Answer with ElevenLabs TTS]
+    Y --> Z[Encode Audio as Base64]
+    Z --> AA([Return Text + Audio to User])
+
+    X -->|No| AB([Return Text Response to User])
+
     style A fill:#4fc3f7,stroke:#039be5,color:#000
-    style W fill:#4caf50,stroke:#388e3c,color:#fff
-    style X fill:#4caf50,stroke:#388e3c,color:#fff
+    style J fill:#e94560,stroke:#c23152,color:#fff
+    style R fill:#e94560,stroke:#c23152,color:#fff
+    style T fill:#f0a500,stroke:#cf8d00,color:#000
+    style U fill:#dc3545,stroke:#b02a37,color:#fff
+    style AA fill:#4caf50,stroke:#388e3c,color:#fff
+    style AB fill:#4caf50,stroke:#388e3c,color:#fff
             </pre>
         </div>
-        <div class="diagram-label">Figure 6: Activity Diagram -- Adaptive RAG Pipeline Complete Workflow</div>
+        <div class="diagram-label">Figure 5: Activity Diagram — Actions and Decisions in Query Processing</div>
     </div>
 
     <!-- ==================== STATE DIAGRAM ==================== -->
     <div class="section">
         <h2><span class="section-number">4</span> State Diagram</h2>
-        <p>The state diagram represents the different states of a user query as it transitions through the system processing pipeline.</p>
+        <p>The state diagram captures the <strong>states a user query has already passed through</strong> as it moves through the system — each state represents a completed stage in the query lifecycle.</p>
 
         <div class="diagram-container">
             <pre class="mermaid">
 stateDiagram-v2
-    [*] --> Received : User submits query
+    [*] --> Received : Query was submitted by user
 
-    Received --> Transcribing : Audio input
-    Received --> Validating : Text input
-    Transcribing --> Validating : Transcription complete
+    Received --> Transcribed : Audio was transcribed by Whisper
+    Received --> Validated : Text input was validated directly
 
-    Validating --> Rejected : Empty or invalid
-    Validating --> Classifying : Input valid
+    Transcribed --> Validated : Text was extracted from audio
 
-    Classifying --> CasualProcessing : Intent = CASUAL
-    Classifying --> SupportProcessing : Intent = SUPPORT
+    Validated --> Rejected : Input was found empty or invalid
+    Validated --> HistoryLoaded : Last 6 messages were loaded from DB
 
-    CasualProcessing --> Generating : Direct LLM call
+    HistoryLoaded --> IntentClassified : LLM Router assigned an intent
 
-    state SupportProcessing {
-        [*] --> QueryRewriting
-        QueryRewriting --> Retrieving : Rewritten query
-        Retrieving --> ContextFound : Chunks retrieved
-    }
+    IntentClassified --> DirectAnswerGenerated : Intent was CASUAL — LLM responded directly
 
-    ContextFound --> Generating : Context ready
+    IntentClassified --> QueryRewritten : Intent was SUPPORT + history existed
+    IntentClassified --> OriginalQueryUsed : Intent was SUPPORT + no history
 
-    Generating --> ConfidenceCheck : Answer generated
+    QueryRewritten --> ContextRetrieved : ChromaDB was searched with rewritten query
+    OriginalQueryUsed --> ContextRetrieved : ChromaDB was searched with original query
 
-    ConfidenceCheck --> Verified : Confidence HIGH or MEDIUM
-    ConfidenceCheck --> Verifying : Confidence LOW
+    ContextRetrieved --> RAGAnswerGenerated : Answer was built using retrieved chunks
 
-    Verifying --> Verified : Verification VALID
-    Verifying --> FallbackGenerated : Verification INVALID
+    RAGAnswerGenerated --> HighConfidenceAccepted : Confidence was HIGH or MEDIUM
+    RAGAnswerGenerated --> AnswerVerified : Confidence was LOW — LLM cross-check was run
+    AnswerVerified --> LowConfidenceAccepted : Verification passed
+    AnswerVerified --> FallbackUsed : Verification failed — fallback was returned
 
-    Verified --> Persisting : Save to database
-    FallbackGenerated --> Persisting : Save fallback
+    DirectAnswerGenerated --> MessageSaved : Message was written to PostgreSQL
+    HighConfidenceAccepted --> MessageSaved : Message was written to PostgreSQL
+    LowConfidenceAccepted --> MessageSaved : Message was written to PostgreSQL
+    FallbackUsed --> MessageSaved : Fallback was written to PostgreSQL
 
-    Persisting --> AudioGenerating : Voice endpoint
-    Persisting --> Completed : Text endpoint
+    MessageSaved --> MetricsLogged : Prometheus + MLflow were updated
 
-    AudioGenerating --> Completed : Audio encoded
+    MetricsLogged --> AudioGenerated : Voice endpoint — ElevenLabs TTS was called
+    MetricsLogged --> Completed : Text endpoint — response was returned
+
+    AudioGenerated --> Completed : Audio was encoded and returned with text
 
     Completed --> [*]
     Rejected --> [*]
             </pre>
         </div>
-        <div class="diagram-label">Figure 7: State Diagram -- User Query Lifecycle</div>
+        <div class="diagram-label">Figure 6: State Diagram — Completed States in the Query Lifecycle</div>
     </div>
 
     <!-- ==================== CLASS DIAGRAM ==================== -->
@@ -447,8 +430,11 @@ classDiagram
     }
 
     class AuthRouter {
-        +google_login() RedirectURL
-        +google_callback(code) JWT
+        +register(body) UserResponse
+        +login(body) TokenResponse
+        +forgot_password(body) OTPResponse
+        +verify_otp(body) ResetTokenResponse
+        +reset_password(body) Message
     }
 
     ChatRouter --> LLMRouter : uses
@@ -461,7 +447,7 @@ classDiagram
     Generator --> LLMRouter : "same LLM provider"
             </pre>
         </div>
-        <div class="diagram-label">Figure 8: Class Diagram -- System Components and Relationships</div>
+        <div class="diagram-label">Figure 7: Class Diagram — System Components and Relationships</div>
 
         <h3>5.1 Class Responsibilities</h3>
         <table>
@@ -476,13 +462,13 @@ classDiagram
                 <tr><td><strong>TextToSpeech</strong></td><td>app.nlp.tts</td><td>Converts text responses to MP3 audio using ElevenLabs API</td></tr>
                 <tr><td><strong>ChatRouter</strong></td><td>app.api.chat</td><td>FastAPI router handling /chat/ask, /chat/voice, and history endpoints</td></tr>
                 <tr><td><strong>FeedbackRouter</strong></td><td>app.api.feedback</td><td>FastAPI router handling feedback submission and retrieval</td></tr>
-                <tr><td><strong>AuthRouter</strong></td><td>app.api.auth</td><td>FastAPI router handling Google OAuth 2.0 authentication</td></tr>
+                <tr><td><strong>AuthRouter</strong></td><td>app.api.auth</td><td>FastAPI router handling user registration, login, OTP, and password reset</td></tr>
             </tbody>
         </table>
     </div>
 
     <div class="footer">
-        RAG-Powered Customer Support Chatbot -- System Analysis and Design -- Section 3 of 6
+        RAG-Powered Customer Support Chatbot — System Analysis and Design — Section 3 of 6
     </div>
 
 </div>
@@ -507,4 +493,3 @@ classDiagram
 
 </body>
 </html>
-
