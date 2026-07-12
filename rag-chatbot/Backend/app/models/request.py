@@ -81,3 +81,12 @@ class ResetPasswordRequest(BaseModel):
         if self.new_password != self.confirm_password:
             raise ValueError("Passwords do not match")
         return self
+
+
+# NEW: Ticket request models
+class TicketResponseRequest(BaseModel):
+    answer: str
+
+
+class UpdateTicketStatusRequest(BaseModel):
+    status: str  # open / in_progress / resolved

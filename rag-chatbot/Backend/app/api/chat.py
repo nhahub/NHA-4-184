@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 from starlette.requests import Request
 from app.core.rate_limiter import limiter
 from app.db.session import get_db
-from app.db.models import User, Conversation, ChatMessage
+from app.db.models import Ticket, User, Conversation, ChatMessage
 from app.models.request import ChatRequest
 from app.models.response import (
     ChatResponse, SourceChunk,
@@ -176,13 +176,14 @@ def ask_question(
     confidence = result["confidence"]
     verified = None
     pipeline = "medium_confidence"
+    create_ticket = False  # only True when verification fails
 
     if confidence >= HIGH_CONFIDENCE:
         pipeline = "high_confidence"
         logger.info(f"High confidence path: confidence={confidence}")
 
     elif confidence < LOW_CONFIDENCE:
-        # Low confidence — verify the answer
+        # Low confidence — run verification first
         context_text = "\n".join([r["text"] for r in result["all_results"]])
         verification = generator.verify_answer(body.question, answer, context_text)
         verified = verification["is_valid"]
@@ -191,13 +192,22 @@ def ask_question(
             pipeline = "low_confidence_verified"
             logger.info(f"Low confidence VERIFIED: confidence={confidence}")
         else:
-            pipeline = "low_confidence_rejected"
-            answer = "I'm sorry, I don't have enough information to answer that question accurately. Could you please rephrase or provide more details?"
-            logger.info(f"Low confidence REJECTED: confidence={confidence}")
+            # Verification failed → escalate to human agent
+            pipeline = "human_agent"
+            create_ticket = True
+            answer = (
+                "I couldn't find a confident answer to your question.\n\n"
+                "✅ A support ticket has been created. One of our human agents "
+                "will review your question and respond shortly."
+            )
+            logger.info(f"Low confidence REJECTED → ticket will be created: confidence={confidence}")
+
+    else:
+        logger.info(f"Medium confidence path: confidence={confidence}")
 
     elapsed = round(time.time() - start_time, 3)
 
-    # Step 8: Save message to DB
+    # Step 8: Save message to DB FIRST (so message.id is available for ticket)
     context_text = "\n---\n".join([r["text"] for r in result["all_results"]])
     message = ChatMessage(
         conversation_id=conversation.id,
@@ -209,6 +219,23 @@ def ask_question(
     db.add(message)
     db.commit()
     db.refresh(message)
+
+    # Step 9: Create ticket AFTER message saved (message.id now correct)
+    if create_ticket:
+        try:
+            ticket = Ticket(
+                user_id=current_user.id,
+                conversation_id=conversation.id,
+                message_id=message.id,
+                question=body.question,
+                status="open",
+                priority="high" if confidence < 0.05 else "medium"
+            )
+            db.add(ticket)
+            db.commit()
+            logger.info(f"Support ticket created: ticket_id={ticket.id}, user_id={current_user.id}, confidence={confidence}")
+        except Exception as e:
+            logger.error(f"Failed to create ticket: {str(e)}", exc_info=True)
 
     # Build sources
     sources = []
@@ -404,13 +431,14 @@ async def voice_query(
     confidence = result["confidence"]
     verified = None
     pipeline = "medium_confidence"
+    create_ticket = False  # only True when verification fails
 
     if confidence >= HIGH_CONFIDENCE:
         pipeline = "high_confidence"
         logger.info(f"Voice high confidence path: confidence={confidence}")
 
     elif confidence < LOW_CONFIDENCE:
-        # Low confidence — verify the answer
+        # Low confidence — run verification first
         context_text = "\n".join([r["text"] for r in result["all_results"]])
         verification = generator.verify_answer(question, answer, context_text)
         verified = verification["is_valid"]
@@ -419,13 +447,22 @@ async def voice_query(
             pipeline = "low_confidence_verified"
             logger.info(f"Voice low confidence VERIFIED: confidence={confidence}")
         else:
-            pipeline = "low_confidence_rejected"
-            answer = "I'm sorry, I don't have enough information to answer that question accurately. Could you please rephrase or provide more details?"
-            logger.info(f"Voice low confidence REJECTED: confidence={confidence}")
+            # Verification failed → escalate to human agent
+            pipeline = "human_agent"
+            create_ticket = True
+            answer = (
+                "I couldn't find a confident answer to your question.\n\n"
+                "✅ A support ticket has been created. One of our human agents "
+                "will review your question and respond shortly."
+            )
+            logger.info(f"Voice low confidence REJECTED → ticket will be created: confidence={confidence}")
+
+    else:
+        logger.info(f"Voice medium confidence path: confidence={confidence}")
 
     elapsed = round(time.time() - start_time, 3)
 
-    # Step 8: Save message to DB
+    # Step 8: Save message to DB FIRST (so message.id is available for ticket)
     context_text = "\n---\n".join([r["text"] for r in result["all_results"]])
     message = ChatMessage(
         conversation_id=conversation.id,
@@ -437,6 +474,23 @@ async def voice_query(
     db.add(message)
     db.commit()
     db.refresh(message)
+
+    # Step 9: Create ticket AFTER message saved (message.id now correct)
+    if create_ticket:
+        try:
+            ticket = Ticket(
+                user_id=current_user.id,
+                conversation_id=conversation.id,
+                message_id=message.id,
+                question=question,
+                status="open",
+                priority="high" if confidence < 0.05 else "medium"
+            )
+            db.add(ticket)
+            db.commit()
+            logger.info(f"Voice support ticket created: ticket_id={ticket.id}, user_id={current_user.id}, confidence={confidence}")
+        except Exception as e:
+            logger.error(f"Failed to create voice ticket: {str(e)}", exc_info=True)
 
     # Build sources
     sources = []

@@ -8,6 +8,7 @@ class UserResponse(BaseModel):
     username: str
     email: str
     is_active: bool
+    is_admin: bool = False
 
     class Config:
         from_attributes = True
@@ -34,9 +35,9 @@ class ChatResponse(BaseModel):
     category: str
     sources: List[SourceChunk]
     conversation_id: int
-    intent: Optional[str] = None          
-    pipeline: Optional[str] = None       
-    verified: Optional[bool] = None 
+    intent: Optional[str] = None
+    pipeline: Optional[str] = None
+    verified: Optional[bool] = None
 
 
 # --- Feedback Models ---
@@ -101,6 +102,45 @@ class ConversationDetail(BaseModel):
     created_at: datetime
     updated_at: datetime
     messages: List[MessageItem]
+
+    class Config:
+        from_attributes = True
+
+
+# --- Ticket Models ---
+
+class TicketResponseInfo(BaseModel):
+    id: int
+    admin_id: int
+    answer: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TicketOut(BaseModel):
+    """Used by admin to see full ticket details."""
+    id: int
+    question: str
+    status: str
+    priority: str
+    created_at: datetime
+    user_id: int
+    responses: List[TicketResponseInfo] = []
+
+    class Config:
+        from_attributes = True
+
+
+class UserTicketOut(BaseModel):
+    """Used by user to see their own tickets and the admin answer."""
+    id: int
+    conversation_id: Optional[int] = None
+    question: str
+    status: str
+    created_at: datetime
+    answer: Optional[str] = None
 
     class Config:
         from_attributes = True

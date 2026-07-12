@@ -9,7 +9,7 @@ from app.middleware.logging import LoggingMiddleware
 from app.core.logging_config import setup_logging
 from app.db.session import engine
 from app.db.models import Base
-from app.api import auth, chat, feedback
+from app.api import auth, chat, feedback, tickets
 from fastapi.responses import Response
 from app.mlops.metrics import get_metrics, get_metrics_content_type
 
@@ -49,6 +49,7 @@ app.add_middleware(LoggingMiddleware)
 app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(feedback.router)
+app.include_router(tickets.router)
 
 @app.get("/", tags=["Health"])
 def root():

@@ -306,6 +306,7 @@ def get_current_user_info(current_user: User = Depends(get_current_user)):
         "id": current_user.id,
         "username": current_user.username,
         "email": current_user.email,
-        "profile_picture": current_user.profile_picture
+        "profile_picture": current_user.profile_picture,
+        "is_admin": current_user.is_admin
     }
 

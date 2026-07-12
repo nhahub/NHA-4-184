@@ -4,3 +4,17 @@ __pycache__/
 .ipynb_checkpoints/
 mlruns/
 Backend/data/vector_db/
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.env*.local
+frontend/coverage/
+frontend/.vercel/
+frontend/pnpm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.npm/
+.DS_Store

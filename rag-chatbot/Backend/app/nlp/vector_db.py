@@ -44,6 +44,25 @@ class VectorDB:
             logger.error(f"Failed to add chunks to ChromaDB: {str(e)}", exc_info=True)
             raise
 
+    def add_document(self, doc_id: str, document: str, embedding: List[float], metadata: Dict):
+        """
+        Add a single document with a PRE-COMPUTED embedding.
+        Always pass embedding from our Embedder class to guarantee
+        the same vector space as all other documents.
+        """
+        logger.info(f"Adding single document to ChromaDB: doc_id={doc_id}")
+        try:
+            self.collection.add(
+                ids=[doc_id],
+                documents=[document],
+                embeddings=[embedding],
+                metadatas=[metadata]
+            )
+            logger.info(f"Document added to ChromaDB successfully: doc_id={doc_id}")
+        except Exception as e:
+            logger.error(f"Failed to add document to ChromaDB: {str(e)}, doc_id={doc_id}", exc_info=True)
+            raise
+
     def search(self, query_text: str, n_results: int = 3) -> Dict:
         """Search for similar chunks given a query."""
         logger.debug(f"ChromaDB search: query_len={len(query_text)}, n_results={n_results}")

@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, Float, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from datetime import datetime
 from .session import Base
 
 
@@ -13,6 +14,7 @@ class User(Base):
     google_id = Column(String(255), unique=True, nullable=True)
     profile_picture = Column(String(500), nullable=True)
     is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)  # NEW: admin role flag
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     conversations = relationship("Conversation", back_populates="user")
@@ -66,3 +68,30 @@ class OTPCode(Base):
     is_used = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+
+class Ticket(Base):
+    __tablename__ = "tickets"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=True)
+    message_id = Column(Integer, ForeignKey("chat_messages.id"), nullable=True)  # links to the exact message
+    question = Column(Text, nullable=False)
+    status = Column(String, default="open")      # open / in_progress / resolved
+    priority = Column(String, default="medium")  # low / medium / high
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+    responses = relationship("TicketResponse", back_populates="ticket")
+    user = relationship("User")
+
+
+class TicketResponse(Base):
+    __tablename__ = "ticket_responses"
+    id = Column(Integer, primary_key=True, index=True)
+    ticket_id = Column(Integer, ForeignKey("tickets.id"), nullable=False)
+    admin_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    answer = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    ticket = relationship("Ticket", back_populates="responses")
+    admin = relationship("User")
